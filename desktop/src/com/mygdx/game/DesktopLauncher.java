@@ -11,6 +11,8 @@ public class DesktopLauncher {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 		config.setForegroundFPS(60);
 		config.setTitle("Snake Blockade - Groupe 20");
+		config.setWindowedMode(560, 640); // Taille de la fenêtre en pixels
+		config.setResizable(false);
 		// Lance une instance de notre classe de jeu personnalisé
 		new Lwjgl3Application(new SnakeBlockade(), config);
 	}

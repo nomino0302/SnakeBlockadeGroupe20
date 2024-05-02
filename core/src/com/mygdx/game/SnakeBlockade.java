@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -23,7 +24,7 @@ public class SnakeBlockade extends ApplicationAdapter {
 	public void render () {
 		ScreenUtils.clear(0, 0, 0, 1);
 		batch.begin();
-		batch.draw(assets.strawberryTexture, 0, 0);
+		batch.draw(assets.backgroundTexture, 0, 0);
 		batch.end();
 	}
 
@@ -31,6 +32,6 @@ public class SnakeBlockade extends ApplicationAdapter {
 	@Override
 	public void dispose () {
 		batch.dispose(); // Libère l'espace alloué à la ressource
-		assets.strawberryTexture.dispose();
+		assets.backgroundTexture.dispose();
 	}
 }

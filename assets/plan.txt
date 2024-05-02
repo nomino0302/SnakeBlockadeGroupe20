@@ -1,0 +1,15 @@
+Tutoriels :
+- https://libgdx.com/wiki/start/a-simple-game
+- https://libgdx.com/wiki/start/simple-game-extended
+
+A retenir :
+- les coordonnées (x, y) commencent comme dans un plan orthonormé : en bas à gauche
+- De même pour nos images et nos Rectangles
+
+Le jeu :
+- Le plan de jeu est de 16x16 cases
+- 1 case = 35x35 pixels
+- Plateau de jeu = 560x560
+- Bannière = 80px
+- Taille de la fenêtre = 560x640
+
