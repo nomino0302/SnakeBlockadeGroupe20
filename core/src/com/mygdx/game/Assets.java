@@ -1,7 +1,6 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.graphics.Texture;
-
 import java.util.HashMap;
 
 // Classe regroupant toutes les textures utilisées, on utilise un peu plus que 10 lignes pour mapper tout les assets
