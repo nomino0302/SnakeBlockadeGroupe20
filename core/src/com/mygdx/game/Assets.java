@@ -1,29 +1,29 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.graphics.Texture;
-import java.util.HashMap;
+import com.badlogic.gdx.assets.AssetManager;
 
 // Classe regroupant toutes les textures utilisées, on utilise un peu plus que 10 lignes pour mapper tout les assets
-public class Assets {
-    Texture backgroundTexture, strawberryTexture, rockTexture;
-    HashMap<String, HashMap<String, Texture>> snakeTexture = new HashMap<>();
+// La classe AssetManager va nous permettre de libérer les assets efficacement lorsqu'on en aura plus besoin
+public class Assets extends AssetManager {
+    String[] snakeParts = new String[] {"headHaut", "headDroite", "headBas", "headGauche", // Textures têtes
+            "droiteHaut", "droiteBas", "gaucheHaut", "gaucheBas", "hori", "verti", "tailHaut", // Textures corps
+            "tailDroite", "tailBas", "tailGauche"}; // Textures queues
+    String[] snakeColors = new String[] {"blue", "red"};
 
     Assets() {
-        // libGDX utilise la classe Texture pour dessiner des pixels sur l'écran
-        this.backgroundTexture = new Texture("design/bg.png");
-        this.strawberryTexture = new Texture("objects/strawberry.png");
-        this.rockTexture = new Texture("objects/rock.png");
+        // Textures
+        this.load("design/bg.png", Texture.class);
+        this.load("objects/strawberry.png", Texture.class);
+        this.load("objects/rock.png", Texture.class);
 
-        // Textures du serpent, on utilise un dictionnaire pour séparer les textures bleues et rouges
-        String[] parts = new String[] {"headHaut", "headDroite", "headBas", "headGauche", // Textures têtes
-                "droiteHaut", "droiteBas", "gaucheHaut", "gaucheBas", "hori", "verti", "tailHaut", // Textures corps
-                "tailDroite", "tailBas", "tailGauche"}; // Textures queues
-        this.snakeTexture.put("blue", new HashMap<>());
-        this.snakeTexture.put("red", new HashMap<>());
-        for (String color: snakeTexture.keySet()) {
-            for (String part: parts) {
-                this.snakeTexture.get(color).put(part, new Texture("snake/" + color + "/" + part + ".png"));
+        // Textures du serpent
+        for (String color: snakeColors) {
+            for (String part: snakeParts) {
+                this.load("snake/" + color + "_" + part + ".png", Texture.class);
             }
         }
+
+        this.finishLoading();
     }
 }

@@ -7,9 +7,9 @@ A retenir :
 - De même pour nos images et nos Rectangles
 
 Le jeu :
+- Taille de la fenêtre = 560x640
 - Le plan de jeu est de 16x16 cases
 - 1 case = 35x35 pixels
 - Plateau de jeu = 560x560
-- Bannière = 80px
-- Taille de la fenêtre = 560x640
+- Bannière = 560x80
 
