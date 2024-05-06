@@ -375,7 +375,9 @@ public class Scene {
                     isRockOn = false;
                 }
                 // On récupère le contenu des inputs
-                n = Integer.parseInt(nField.getText());
+                if (!nField.getText().isEmpty()) {
+                    n = Integer.parseInt(nField.getText());
+                }
                 codeChannel = codeChannelField.getText();
 
                 isLeftPlaying = true;

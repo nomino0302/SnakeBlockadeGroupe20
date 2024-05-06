@@ -13,3 +13,9 @@ Le jeu :
 - Plateau de jeu = 560x560
 - Bannière = 560x80
 
+Le projet :
+- Si corps de > de 2 : si on se retourne on a perdu
+- Fraises aléatoires
+- Quand plus de case libre, perdu (sans faire de coup)
+- Séance de TD = +2pts ou -2pts
+- Note finale = NProjet (/20) + NTD1 + NTD2
