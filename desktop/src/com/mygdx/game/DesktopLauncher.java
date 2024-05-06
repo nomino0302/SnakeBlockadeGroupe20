@@ -9,7 +9,7 @@ public class DesktopLauncher {
 	// Fonction main, le véritable coeur de l'application se trouve dans SnakeBlockade:render
 	public static void main (String[] arg) {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-		config.setForegroundFPS(60);
+		config.setForegroundFPS(30);
 		config.setTitle("Snake Blockade - Groupe 20");
 
 		// Taille de la fenêtre, valeurs dans le fichier Constants.java

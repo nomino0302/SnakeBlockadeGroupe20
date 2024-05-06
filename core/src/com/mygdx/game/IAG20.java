@@ -1,4 +1,4 @@
 package com.mygdx.game;
 
-public class AIG20 {
+public class IAG20 {
 }

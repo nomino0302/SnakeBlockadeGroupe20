@@ -1,6 +1,8 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 // Classe principale qui sert de point de départ pour notre jeu, elle est appelée dans DesktopLauncher:main
@@ -19,11 +21,15 @@ public class SnakeBlockade extends ApplicationAdapter {
 	}
 
 	// Fonction boucle de jeu, elle agit comme une boucle infinie, pas besoin de l'appeler
-	// "Véritable" fonction main
+	// "Véritable" fonction main, exécuté 30 fois par seconde (car 30 FPS)
 	@Override
 	public void render () {
+		// Nettoyage de l'écran
+		Gdx.gl.glClearColor(0, 0, 0, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
 		batch.begin();
-		scene.baseDesign();
+		scene.menuDesign();
 		batch.end();
 	}
 
