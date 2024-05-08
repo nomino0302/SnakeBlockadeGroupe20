@@ -5,6 +5,7 @@ Tutoriels :
 A retenir :
 - les coordonnées (x, y) commencent comme dans un plan orthonormé : en bas à gauche
 - De même pour nos images et nos Rectangles
+- Sauf pour les textes (BitmapFont) --> Elles commencent en haut à gauche
 
 Le jeu :
 - Taille de la fenêtre = 560x640

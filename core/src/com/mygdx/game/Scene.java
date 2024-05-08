@@ -19,7 +19,7 @@ import com.badlogic.gdx.utils.TimeUtils;
 
 /*
 Classe Scene.java
-Gère en grande partie la partie graphique de l'application (menu, bannière, ...)
+Gère en grande partie la partie graphique de l'application (menu, bannière, ...) et les interactions utilisateur (Widgets)
 Les fonctions libGDX étant parfois complexes, des fonctions de + de 10 lignes peuvent être présentes
  */
 
@@ -37,23 +37,26 @@ public class Scene {
     // Widgets interactifs
     Stage stage;
     Skin skin;
-    TextField nField, codeChannelField;
-    TextButton radioJVJ, radioJVIA, radioIAVIA, playButton;
+    TextField boardTilesRatioField, nField, codeChannelField;
+    TextButton radioJVJ, radioJVIA, radioIAVIA, radioJVJOnline, playButton;
     ButtonGroup<Button> radioGroup;
 
     // Instances d'objet qui seront utiles pour communiquer avec les autres classes
+    int boardTilesRatio = 16;
     int n = 2;
     String codeChannel = "";
 
     boolean isSoundOn = true, isStrawberryOn = true, isRockOn = true;
-    boolean isGameOn = false;
+    boolean gameOn = false;
+    boolean playButtonPressed = false;
     boolean isLeftPlaying = false;
     boolean isBlinking = false;
+    String leftPlayer = "", rightPlayer = "";
     String mainText = "Snake Blockade";
     String selectedMod = null;
-    String leftName = "", rightName = "";
     String playerWon = null;
-    long lastNanoBlink = TimeUtils.nanoTime();
+    long lastNanoBlink = TimeUtils.nanoTime(); // long car ça peut être un grand nombre
+    float pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
 
     // Objets libGDX redondants
     Rectangle board = new Rectangle(0, 0, Global.WIDTH, Global.BOARD_HEIGHT);
@@ -61,6 +64,8 @@ public class Scene {
     Rectangle sound = new Rectangle((ban.width / 2) - ((float) 30 / 2) - 30 - 10, board.height + 5, 30, 30);
     Color darkGreen = Color.valueOf("547436"); // Hexadécimal
     Color transparentBlack = new Color(0, 0, 0, 0.8f);
+    Color clearTileGreen = Color.valueOf("ADDD46");
+    Color darkTileGreen = Color.valueOf("98CB40");
 
     // Constructeur pour les objets lourds non instanciés
     Scene(SpriteBatch batch, Assets assets) {
@@ -70,7 +75,7 @@ public class Scene {
         this.parameter = new FreeTypeFontParameter();
 
         this.titleFont = createFont("fonts/joystix_monospace.otf", 30, Color.WHITE);
-        this.writingFont = createFont("fonts/arial.ttf", 24, Color.WHITE);
+        this.writingFont = createFont("fonts/arial.ttf", 18, Color.WHITE);
         this.gameInfosFont = createFont("fonts/joystix_monospace.otf", 14, Color.WHITE);
         this.leftPlayerFont = createFont("fonts/joystix_monospace.otf", 20, Color.SKY);
         this.rightPlayerFont = createFont("fonts/joystix_monospace.otf", 20, Color.RED);
@@ -78,54 +83,84 @@ public class Scene {
 
         // Pour la création de Widget interactifs
         this.stage = new Stage();
+        Gdx.input.setInputProcessor(this.stage);
         // Skin proposé par la communauté libGDX (https://github.com/czyzby/gdx-skins/)
         this.skin = new Skin(Gdx.files.internal("skins/gdx-holo/skin/uiskin.json"));
+
+        // Setup radioGroup
+        radioGroup = new ButtonGroup<Button>();
+        radioGroup.setMaxCheckCount(1);
+        radioGroup.setMinCheckCount(1);
+        radioGroup.setUncheckLast(true);
+
         // On instancie ici nos Widgets
         createWidgets();
     }
 
-    // Design de menu (quand le jeu ne joue pas)
-    public void menuDesign() {
-        drawBan();
-        drawMenuBoard();
+    /*
+    Fonctions publiques
+     */
+
+    /*
+    Partie affichage des différents états du jeu
+     */
+
+    // Fonction principale de la classe, elle va être appelé par le programme principal
+    public void drawScene() {
+        if (gameOn) {
+            gameDesign();
+        } else {
+            menuDesign();
+        }
     }
 
+    // Design du plateau de jeu
     public void gameDesign() {
         drawBan();
         drawBoard();
     }
 
+    // Design de menu (quand le jeu ne joue pas)
+    public void menuDesign() {
+        gameDesign();
+        drawMenuBoard();
+    }
+
+    /*
+    Partie affichage plateau de jeu
+     */
+
+    // Plateau en damier
+    public void drawBoard() {
+        Color columnFirstColor = clearTileGreen;
+        Color rowFirstColor;
+        for (int i = 0; i < boardTilesRatio; i++) {
+            rowFirstColor = columnFirstColor;
+            for (int j = 0; j < boardTilesRatio; j++) {
+                drawRect(i * pixelsForTile, j * pixelsForTile, pixelsForTile, pixelsForTile, rowFirstColor);
+                rowFirstColor = changeTileColor(rowFirstColor);
+            }
+            columnFirstColor = changeTileColor(columnFirstColor);
+        }
+    }
+
+    /*
+    Partie affichage bannière
+     */
+
+    // Design de la bannière
     public void drawBan() {
         drawRect(ban.x, ban.y, ban.width, ban.height, darkGreen);
         gameInfos();
         drawGameIcons();
         showPlayersAvatars();
-        showPlayersNames(leftName, rightName);
-        if (!isGameOn && playerWon != null) {
+        showPlayersNames();
+        if (!gameOn && playerWon != null) {
             showPlayerTrophy(playerWon); // LEFT OU RIGHT
         }
     }
 
-    public void drawMenuBoard() {
-        drawBoard();
-        drawRect(0, 0, board.width, board.height, transparentBlack);
-        drawLabels();
-    }
-
-    public void drawBoard() {
-        batch.draw(assets.get("design/bg.png", Texture.class), board.x, board.y);
-    }
-
-    public void drawLabels() {
-        mainTitle();
-        showControls();
-        showControls();
-        modsText();
-        nFieldText();
-        channelFieldText();
-        drawStage(); // Dessiner tous les Widgets interactifs
-    }
-
+    // Infos au milieu de la bannière
     public void gameInfos() {
         layout.setText(gameInfosFont, "N = " + n);
         float last_layout_height = layout.height;
@@ -136,6 +171,7 @@ public class Scene {
         drawRect((ban.width / 2) + 80, board.height + 6, 1, ban.height - 12, Color.WHITE);
     }
 
+    // Icones au milieu de la bannière
     public void drawGameIcons() {
         batch.draw(assets.get("design/sound.png", Texture.class), sound.x, sound.y, sound.width, sound.height);
         batch.draw(assets.get("objects/strawberry.png", Texture.class), sound.x + 30 + 10, sound.y, sound.width, sound.height);
@@ -152,30 +188,22 @@ public class Scene {
         }
     }
 
+    // Avatars dans la bannière
     public void showPlayersAvatars() {
-        leftPlayerAvatar();
-        rightPlayerAvatar();
-    }
-
-    public void leftPlayerAvatar() {
-        Texture texture = assets.get("snake/blue_headBas.png", Texture.class);
-        batch.draw(texture, 85, Global.HEIGHT - 40);
-    }
-
-    public void rightPlayerAvatar() {
+        batch.draw(assets.get("snake/blue_headBas.png", Texture.class), 85, Global.HEIGHT - 40);
         Texture texture = assets.get("snake/red_headBas.png", Texture.class);
         batch.draw(texture, ban.width - texture.getWidth() - 85, Global.HEIGHT - 40);
     }
 
-    public void showPlayersNames(String leftName, String rightName) {
-        leftPlayerName(leftName);
-        rightPlayerName(rightName);
-    }
-
-    public void leftPlayerName(String name) {
+    // Noms des joueurs dans la bannière
+    public void showPlayersNames() {
         if (!isBlinking || !isLeftPlaying) {
-            layout.setText(leftPlayerFont, name);
+            layout.setText(leftPlayerFont, leftPlayer);
             leftPlayerFont.draw(batch, layout, 105 - layout.width / 2, Global.HEIGHT - 40 - layout.height + 5);
+        }
+        if (!isBlinking || isLeftPlaying) {
+            layout.setText(rightPlayerFont, rightPlayer);
+            rightPlayerFont.draw(batch, layout, ban.width - 105 - layout.width / 2, Global.HEIGHT - 40 - layout.height + 5);
         }
         // Si temps qui s'est écroulé > 0.5 seconde
         if (TimeUtils.nanoTime() - lastNanoBlink > 500000000) {
@@ -184,69 +212,120 @@ public class Scene {
         }
     }
 
-    public void rightPlayerName(String name) {
-        if (!isBlinking || isLeftPlaying) {
-            layout.setText(rightPlayerFont, name);
-            rightPlayerFont.draw(batch, layout, ban.width - 105 - layout.width / 2, Global.HEIGHT - 40 - layout.height + 5);
-        }
-        if (TimeUtils.nanoTime() - lastNanoBlink > 500000000) {
-            isBlinking = !isBlinking;
-            lastNanoBlink = TimeUtils.nanoTime();
-        }
-    }
-
-    public void showPlayerTrophy(String cote) {
+    // Trophée du vainqueur dans la bannière
+    public void showPlayerTrophy(String side) {
         Texture texture = assets.get("design/trophy.png", Texture.class);
-        if (cote.equals("LEFT")) {
+        if (side.equals(Global.LEFT)) {
             batch.draw(texture, 15, board.height + 22);
         }
-        if (cote.equals("RIGHT")) {
+        if (side.equals(Global.RIGHT)) {
             batch.draw(texture, ban.width - 15 - texture.getWidth(), board.height + 22);
         }
     }
 
-    public void mainTitle() {
-        layout.setText(titleFont, mainText);
-        titleFont.draw(batch, layout, (board.width / 2) - (layout.width / 2), board.height - 30);
+    /*
+    Partie affichage menu
+     */
+
+    // Plateau de jeu recouvert par le menu (sur un fond noir transparent)
+    public void drawMenuBoard() {
+        drawRect(0, 0, board.width, board.height, transparentBlack);
+        drawLabels();
     }
 
+    // Les champs présents dans le menu
+    public void drawLabels() {
+        mainTitle();
+        showControls();
+        showControls();
+        modsText();
+        drawFieldsTexts();
+        drawStage(); // Dessiner tous les Widgets interactifs
+    }
+
+    // Titre du menu, peut être personnalisé
+    public void mainTitle() {
+        layout.setText(titleFont, mainText);
+        titleFont.draw(batch, layout, (board.width / 2) - (layout.width / 2), board.height - 20);
+    }
+
+    // Images indiquant les touches pour contrôler les snakes
     public void showControls() {
         j1ControlsImage();
         j2ControlsImage();
     }
 
+    // Touches joueur 1
     public void j1ControlsImage() {
-        layout.setText(leftPlayerFont, "J1");
-        leftPlayerFont.draw(batch, layout, 50, board.height - 110);
+        layout.setText(leftPlayerFont, Global.J1);
+        leftPlayerFont.draw(batch, layout, 50, board.height - 80);
         Texture img = assets.get("design/zqsd.png", Texture.class);
         float ratio = (float) img.getHeight() / img.getWidth();
-        batch.draw(img, 40, board.height - 220, 200, 200 * ratio);
+        batch.draw(img, 40, board.height - 200, 190, 200 * ratio);
     }
 
+    // Touches joueur 2
     public void j2ControlsImage() {
-        layout.setText(rightPlayerFont, "J2");
-        rightPlayerFont.draw(batch, layout, board.width - 50 - layout.width, board.height - 110);
+        layout.setText(rightPlayerFont, Global.J2);
+        rightPlayerFont.draw(batch, layout, board.width - 50 - layout.width, board.height - 80);
         Texture img = assets.get("design/fleches.png", Texture.class);
         float ratio = (float) img.getHeight() / img.getWidth();
-        batch.draw(img, board.width - 40 - ((float) img.getWidth() / 2), board.height - 220, 200, 200 * ratio);
+        batch.draw(img, board.width - 40 - ((float) img.getWidth() / 2), board.height - 190, 200, 200 * ratio);
     }
 
+    // Texte "Modes : "
     public void modsText() {
         layout.setText(writingFont, "Modes :");
-        writingFont.draw(batch, layout, (board.width / 2) - (layout.width / 2),board.height - 260);
+        writingFont.draw(batch, layout, (board.width / 2) - (layout.width / 2),board.height - 215);
     }
 
-    public void nFieldText() {
+    // Textes avant les inputs
+    public void drawFieldsTexts() {
+        layout.setText(writingFont, "X*X cases =");
+        float maxFieldWidth = layout.width;
+        writingFont.draw(batch, layout, 135, board.height - 370);
+        drawRect((board.width / 4) + 120, board.height - 370 - layout.height - 2, 150, 1, Color.WHITE);
+
         layout.setText(writingFont, "N =");
-        writingFont.draw(batch, layout, (board.width / 4) + 50,board.height - 390);
-        drawRect((board.width / 4) + 110, board.height - 415, 150, 1, Color.WHITE);
+        writingFont.draw(batch, layout, 135 + (maxFieldWidth - layout.width),board.height - 400);
+        drawRect((board.width / 4) + 120, board.height - 400 - layout.height - 2, 150, 1, Color.WHITE);
+
+        layout.setText(writingFont, "Channel =");
+        writingFont.draw(batch, layout, 135 + (maxFieldWidth - layout.width),board.height - 430);
+        drawRect((board.width / 4) + 120, board.height - 430 - layout.height - 2, 150, 1, Color.WHITE);
     }
 
-    public void channelFieldText() {
-        layout.setText(writingFont, "Channel =");
-        writingFont.draw(batch, layout, (board.width / 4) - layout.width / 4,board.height - 440);
-        drawRect((board.width / 4) + 110, board.height - 465, 150, 1, Color.WHITE);
+    // Affichage des Widget interactifs
+    public void drawStage() {
+        stage.act(Gdx.graphics.getDeltaTime());
+        stage.draw();
     }
+
+    // Fonction qui regroupe la création de tous les Widgets (appelé par le constructeur)
+    public void createWidgets() {
+        // Boutons radios
+        radioJVJ = createRadioButton(radioGroup, "Joueur VS Joueur", (board.width / 2) - 250 - 10, board.height - 300, 250);
+        radioJVIA = createRadioButton(radioGroup, "Joueur VS IA", (board.width / 2) - 250 - 10, board.height - 350, 250);
+        radioIAVIA = createRadioButton(radioGroup, "[EN LIGNE] IA VS IA", (board.width / 2) + 10, board.height - 300, 250);
+        radioJVJOnline = createRadioButton(radioGroup, "[EN LIGNE] Joueur VS Joueur", (board.width / 2) + 10, board.height - 350, 250);
+
+        // TextField (inputs)
+        boardTilesRatioField = createTextField(Integer.toString(boardTilesRatio), (board.width / 4) + 100 + 10, board.height - 370 - 15 - 2, 150, 30);
+        onlyNumbersFilter(boardTilesRatioField);
+        nField = createTextField(Integer.toString(n), (board.width / 4) + 100 + 10, board.height - 400 - 15 - 2, 150, 30);
+        onlyNumbersFilter(nField);
+        codeChannelField = createTextField("", (board.width / 4) + 100 + 10, board.height - 430 - 15 - 2, 150, 30);
+
+        // Bouton cliquable
+        playButton = createClickableButton("Jouer", (board.width / 2) - ((float) 150 / 2), board.height - 540, 150, 50);
+        startGameButtonEventListener(playButton);
+    }
+
+    /*
+    Fonctions privées
+    Seulement accessible par les méthodes de la classe
+    Les méthodes les plus générales se trouvent ici
+     */
 
     // Fonction pour dessiner des rectangles de couleur
     private void drawRect(float x, float y, float width, float height, Color color) {
@@ -267,7 +346,35 @@ public class Scene {
         batch.begin();
     }
 
-    // Retourne la nouvelle police d'écriture en effaçant l'ancienne
+    // Fonction qui retourne un input de type TextField
+    private TextField createTextField(String baseText, float x, float y, float width, float height) {
+        TextField textField = new TextField(baseText, skin);
+        textField.setColor(Color.WHITE);
+        textField.setPosition(x, y);
+        textField.setSize(width, height);
+        stage.addActor(textField); // On ajoute le Widget au Stage qu'on lancera dans la boucle de jeu
+        return textField;
+    }
+
+    // Fonction qui permet la création de tous les boutons
+    private TextButton createRadioButton(ButtonGroup<Button> buttonGroup, String baseText, float x, float y, float width) {
+        TextButton radioButton = new TextButton(baseText, skin, "toggle");
+        radioButton.setWidth(width);
+        radioButton.setPosition(x, y);
+        buttonGroup.add(radioButton);
+        stage.addActor(radioButton);
+        return radioButton;
+    }
+
+    private TextButton createClickableButton(String baseText, float x, float y, float width, float height) {
+        TextButton clickableButton = new TextButton(baseText, skin);
+        clickableButton.setSize(width, height);
+        clickableButton.setPosition(x, y);
+        stage.addActor(clickableButton);
+        return clickableButton;
+    }
+
+    // Retourne une nouvelle police d'écriture
     private BitmapFont createFont(String path, int size, Color color) {
         if (generator != null) {
             generator.dispose();
@@ -279,61 +386,34 @@ public class Scene {
         return generator.generateFont(parameter);
     }
 
-    // Fonction qui regroupe la création de tous les Widgets
-    private void createWidgets() {
-        createModSelectionButtons();
-        nField = createTextField("2", (board.width / 4) + 100, board.height - 415, 150, 30);
-        addNFieldEventListener(nField);
-        codeChannelField = createTextField("", (board.width / 4) + 100, board.height - 465, 150, 30);
-        createPlayButton();
+    // Fonction pour alterner la couleur du damier
+    private Color changeTileColor(Color color) {
+        if (color == clearTileGreen) return darkTileGreen;
+        else return clearTileGreen;
     }
 
-    // Affichage des Widget interactifs
-    private void drawStage() {
-        stage.act(Gdx.graphics.getDeltaTime());
-        stage.draw();
+    // Autoriser les objets
+    private void enableObjects() {
+        isStrawberryOn = true;
+        isRockOn = true;
     }
 
-    private TextField createTextField(String baseText, float x, float y, float width, float height) {
-        TextField textField = new TextField(baseText, skin);
-        textField.setColor(Color.WHITE);
-        textField.setPosition(x, y);
-        textField.setSize(width, height);
-        stage.addActor(textField);
-        Gdx.input.setInputProcessor(stage); // On ajoute le Widget au Stage qu'on lancera dans la boucle de jeu
-        return textField;
+    // Interdire les objets
+    private void disableObjects() {
+        isStrawberryOn = false;
+        isRockOn = false;
     }
 
-    private void createModSelectionButtons() {
-        // Boutons radio (seul 1 peut être sélectionné)
-        radioJVJ = new TextButton("Joueur VS Joueur", skin, "toggle");
-        radioJVIA = new TextButton("Joueur VS IA", skin, "toggle");
-        radioIAVIA = new TextButton("[EN LIGNE] IA VS IA", skin, "toggle");
-
-        // On place d'abord le bouton du milieu pour bien placer les autres selon lui
-        radioJVIA.setPosition((board.width / 2) - (radioJVIA.getWidth() / 2), board.height - 350);
-        radioJVJ.setPosition(radioJVIA.getX() - 10 - radioJVJ.getWidth(), board.height - 350);
-        radioIAVIA.setPosition(radioJVIA.getX() + radioJVIA.getWidth() + 10, board.height - 350);
-
-        // Groupe de boutons pour que seulement un bouton soit sélectionnable à la fois
-        radioGroup = new ButtonGroup<>();
-        radioGroup.add(radioJVJ, radioJVIA, radioIAVIA);
-        radioGroup.setMaxCheckCount(1);
-        radioGroup.setMinCheckCount(1);
-        radioGroup.setUncheckLast(true);
-
-        stage.addActor(radioJVJ);
-        stage.addActor(radioJVIA);
-        stage.addActor(radioIAVIA);
+    // Modifier la taille du plateau de jeu
+    private void setBoardTilesRatio(int val) {
+        boardTilesRatio = val;
+        pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
     }
 
-    private void createPlayButton() {
-        playButton = new TextButton("Jouer", skin);
-        playButton.setSize(150, 50);
-        playButton.setPosition((board.width / 2) - (playButton.getWidth() / 2), board.height - 540);
-
-        stage.addActor(playButton);
-        addPlayButtonEventListener();
+    // Donner des noms aux joueurs
+    private void setPlayersNames(String leftName, String rightName) {
+        leftPlayer = leftName;
+        rightPlayer = rightName;
     }
 
     /*
@@ -344,9 +424,9 @@ public class Scene {
     exécuter des actions précises quand elles vont se déclencher
      */
 
-    // Pour nField
+    // Pour boardTilesRatioField et nField
     // Charactère tapé --> Verification si chiffre
-    private void addNFieldEventListener(TextField textField) {
+    private void onlyNumbersFilter(TextField textField) {
         textField.setTextFieldFilter(new TextField.TextFieldFilter() {
             @Override
             public boolean acceptChar(TextField textField, char c) {
@@ -357,31 +437,34 @@ public class Scene {
 
     // Pour playButton
     // Bouton appuyé --> Lancement de la partie
-    private void addPlayButtonEventListener() {
-        playButton.addListener(new ClickListener() {
+    private void startGameButtonEventListener(TextButton button) {
+        button.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                enableObjects();
                 if (radioGroup.getChecked() == radioJVJ) {
                     selectedMod = Global.JVJ;
-                    isStrawberryOn = true;
-                    isRockOn = true;
+                    setPlayersNames(Global.J1, Global.J2);
+                } else if (radioGroup.getChecked() == radioJVIA) {
+                    selectedMod = Global.JVIA;
+                    setPlayersNames(Global.J1, Global.IAG20);
+                    disableObjects();
                 } else if (radioGroup.getChecked() == radioIAVIA) {
                     selectedMod = Global.IAVIA;
-                    isStrawberryOn = false;
-                    isRockOn = false;
+                    setPlayersNames(Global.IAG20, Global.IA);
+                    disableObjects();
                 } else {
-                    selectedMod = Global.JVIA;
-                    isStrawberryOn = false;
-                    isRockOn = false;
+                    selectedMod = Global.JVJONLINE;
+                    setPlayersNames(Global.J1TOI, Global.J2);
                 }
                 // On récupère le contenu des inputs
-                if (!nField.getText().isEmpty()) {
-                    n = Integer.parseInt(nField.getText());
-                }
+                if (!boardTilesRatioField.getText().isEmpty()) setBoardTilesRatio(Integer.parseInt(boardTilesRatioField.getText()));
+                if (!nField.getText().isEmpty()) n = Integer.parseInt(nField.getText());
                 codeChannel = codeChannelField.getText();
 
+                playButtonPressed = true;
+                gameOn = true;
                 isLeftPlaying = true;
-                isGameOn = true;
             }
         });
     }

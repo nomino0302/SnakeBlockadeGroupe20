@@ -13,7 +13,6 @@ public class Assets extends AssetManager {
 
     Assets() {
         // Textures
-        this.load("design/bg.png", Texture.class);
         this.load("design/trophy.png", Texture.class);
         this.load("design/zqsd.png", Texture.class);
         this.load("design/sound.png", Texture.class);

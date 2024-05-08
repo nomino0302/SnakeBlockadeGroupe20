@@ -14,4 +14,10 @@ public class Global {
     public static final String JVJ = "JVJ";
     public static final String JVIA = "JVIA";
     public static final String IAVIA = "IAVIA";
+    public static final String JVJONLINE = "JVJONLINE";
+    public static final String J1 = "J1";
+    public static final String J2 = "J2";
+    public static final String IAG20 = "IAG20";
+    public static final String IA = "IA";
+    public static final String J1TOI = "J1 (Toi)";
 }
