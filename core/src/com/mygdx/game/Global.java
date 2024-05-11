@@ -1,6 +1,10 @@
 package com.mygdx.game;
 
-// Classe contenant les variables constantes qui peuvent être utilisées par tout les fichiers sans importer ladite classe
+/*
+Classe Global.java
+Classe contenant les variables constantes qui peuvent être utilisées par tout les fichiers sans importer ladite classe
+*/
+
 public class Global {
     // public static final rend la constante globale
     public static final int WIDTH = 560;
@@ -20,4 +24,16 @@ public class Global {
     public static final String IAG20 = "IAG20";
     public static final String IA = "IA";
     public static final String J1TOI = "J1 (Toi)";
+    public static final String J2TOI = "J2 (Toi)";
+    public static final String BLUE = "blue";
+    public static final String RED = "red";
+    public static final String HAUT = "HAUT";
+    public static final String DROITE = "DROITE";
+    public static final String BAS = "BAS";
+    public static final String GAUCHE = "GAUCHE";
+
+    // État du snake (dans son futur emplacement)
+    public static final String TOUCHED = "TOUCHED";
+    public static final String STRAWBERRY = "STRAWBERRY";
+    public static final String NOTHING = "NOTHING";
 }

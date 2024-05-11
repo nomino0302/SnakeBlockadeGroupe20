@@ -11,17 +11,19 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.TimeUtils;
+import java.util.ArrayList;
 
 /*
 Classe Scene.java
 Gère en grande partie la partie graphique de l'application (menu, bannière, ...) et les interactions utilisateur (Widgets)
 Les fonctions libGDX étant parfois complexes, des fonctions de + de 10 lignes peuvent être présentes
- */
+*/
 
 public class Scene {
     SpriteBatch batch;
@@ -37,6 +39,7 @@ public class Scene {
     // Widgets interactifs
     Stage stage;
     Skin skin;
+    ArrayList<Actor> widgets = new ArrayList<>();
     TextField boardTilesRatioField, nField, codeChannelField;
     TextButton radioJVJ, radioJVIA, radioIAVIA, radioJVJOnline, playButton;
     ButtonGroup<Button> radioGroup;
@@ -47,6 +50,8 @@ public class Scene {
     String codeChannel = "";
 
     boolean isSoundOn = true, isStrawberryOn = true, isRockOn = true;
+    boolean firstMenuToggle = true;
+    boolean menuToggle = true;
     boolean gameOn = false;
     boolean playButtonPressed = false;
     boolean isLeftPlaying = false;
@@ -57,11 +62,13 @@ public class Scene {
     String playerWon = null;
     long lastNanoBlink = TimeUtils.nanoTime(); // long car ça peut être un grand nombre
     float pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
+    ArrayList<ArrayList<Float>> crossList = new ArrayList<>();
 
     // Objets libGDX redondants
     Rectangle board = new Rectangle(0, 0, Global.WIDTH, Global.BOARD_HEIGHT);
     Rectangle ban = new Rectangle(0, Global.BOARD_HEIGHT, Global.WIDTH, Global.BAN_HEIGHT);
-    Rectangle sound = new Rectangle((ban.width / 2) - ((float) 30 / 2) - 30 - 10, board.height + 5, 30, 30);
+    Rectangle menu = new Rectangle((ban.width / 2) - ((float) (25 * 4 + 10 * 3) / 2), board.height + 5, 25, 25);
+    Rectangle sound = new Rectangle(menu.x + 25 + 10, menu.y, menu.width, menu.height);
     Color darkGreen = Color.valueOf("547436"); // Hexadécimal
     Color transparentBlack = new Color(0, 0, 0, 0.8f);
     Color clearTileGreen = Color.valueOf("ADDD46");
@@ -105,25 +112,16 @@ public class Scene {
     Partie affichage des différents états du jeu
      */
 
-    // Fonction principale de la classe, elle va être appelé par le programme principal
-    public void drawScene() {
-        if (gameOn) {
-            gameDesign();
-        } else {
-            menuDesign();
-        }
-    }
-
-    // Design du plateau de jeu
-    public void gameDesign() {
-        drawBan();
-        drawBoard();
-    }
-
     // Design de menu (quand le jeu ne joue pas)
     public void menuDesign() {
-        gameDesign();
-        drawMenuBoard();
+        drawRect(0, 0, board.width, board.height, transparentBlack, true, true);
+        drawLabels();
+
+        // Fonction exécuté 1 seule fois (quand on ouvre le menu)
+        if (firstMenuToggle) {
+            addToStage(stage, widgets);
+            firstMenuToggle = false;
+        }
     }
 
     /*
@@ -132,15 +130,26 @@ public class Scene {
 
     // Plateau en damier
     public void drawBoard() {
+        batch.end();
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         Color columnFirstColor = clearTileGreen;
         Color rowFirstColor;
         for (int i = 0; i < boardTilesRatio; i++) {
             rowFirstColor = columnFirstColor;
             for (int j = 0; j < boardTilesRatio; j++) {
-                drawRect(i * pixelsForTile, j * pixelsForTile, pixelsForTile, pixelsForTile, rowFirstColor);
+                drawRect(i * pixelsForTile, j * pixelsForTile, pixelsForTile, pixelsForTile, rowFirstColor, false, false);
                 rowFirstColor = changeTileColor(rowFirstColor);
             }
             columnFirstColor = changeTileColor(columnFirstColor);
+        }
+        shapeRenderer.end();
+        batch.begin();
+    }
+
+    // Fonction qui permet de dessiner les croix sur le plateau (la où le snake s'est crashé)
+    public void drawCross() {
+        for (ArrayList<Float> pos: crossList) {
+            batch.draw(assets.get("design/cross.png", Texture.class), pos.get(0) * pixelsForTile, pos.get(1) * pixelsForTile, pixelsForTile, pixelsForTile);
         }
     }
 
@@ -150,7 +159,7 @@ public class Scene {
 
     // Design de la bannière
     public void drawBan() {
-        drawRect(ban.x, ban.y, ban.width, ban.height, darkGreen);
+        drawRect(ban.x, ban.y, ban.width, ban.height, darkGreen, true, false);
         gameInfos();
         drawGameIcons();
         showPlayersAvatars();
@@ -167,43 +176,44 @@ public class Scene {
         gameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - layout.height);
         layout.setText(gameInfosFont, codeChannel);
         gameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - last_layout_height - layout.height - 8);
-        drawRect((ban.width / 2) - 80, board.height + 6, 1, ban.height - 12, Color.WHITE);
-        drawRect((ban.width / 2) + 80, board.height + 6, 1, ban.height - 12, Color.WHITE);
+        drawRect((ban.width / 2) - 80, board.height + 6, 1, ban.height - 12, Color.WHITE, true, false);
+        drawRect((ban.width / 2) + 80, board.height + 6, 1, ban.height - 12, Color.WHITE, true, false);
     }
 
     // Icones au milieu de la bannière
     public void drawGameIcons() {
+        batch.draw(assets.get("design/esc.png", Texture.class), menu.x, menu.y, menu.width, menu.height);
         batch.draw(assets.get("design/sound.png", Texture.class), sound.x, sound.y, sound.width, sound.height);
-        batch.draw(assets.get("objects/strawberry.png", Texture.class), sound.x + 30 + 10, sound.y, sound.width, sound.height);
-        batch.draw(assets.get("objects/rock.png", Texture.class), sound.x + 60 + 20, sound.y, sound.width, sound.height);
+        batch.draw(assets.get("objects/strawberry.png", Texture.class), sound.x + 25 + 10, sound.y, sound.width, sound.height);
+        batch.draw(assets.get("objects/rock.png", Texture.class), sound.x + 50 + 20, sound.y, sound.width, sound.height);
         Texture stop = assets.get("design/cross.png", Texture.class);
         if (!isSoundOn) {
             batch.draw(stop, sound.x, sound.y, sound.width, sound.height);
         }
         if (!isStrawberryOn) {
-            batch.draw(stop, sound.x + 30 + 10, sound.y, sound.width, sound.height);
+            batch.draw(stop, sound.x + 25 + 10, sound.y, sound.width, sound.height);
         }
         if (!isRockOn) {
-            batch.draw(stop, sound.x + 60 + 20, sound.y, sound.width, sound.height);
+            batch.draw(stop, sound.x + 50 + 20, sound.y, sound.width, sound.height);
         }
     }
 
     // Avatars dans la bannière
     public void showPlayersAvatars() {
-        batch.draw(assets.get("snake/blue_headBas.png", Texture.class), 85, Global.HEIGHT - 40);
-        Texture texture = assets.get("snake/red_headBas.png", Texture.class);
-        batch.draw(texture, ban.width - texture.getWidth() - 85, Global.HEIGHT - 40);
+        // Image tête snake = 35px
+        batch.draw(assets.get("snake/blue_headBas.png", Texture.class), (ban.width / 4) - (35f / 2) - 35, Global.HEIGHT - 40);
+        batch.draw(assets.get("snake/red_headBas.png", Texture.class), (ban.width  / 4 * 3) - (35f / 2) + 35, Global.HEIGHT - 40);
     }
 
     // Noms des joueurs dans la bannière
     public void showPlayersNames() {
-        if (!isBlinking || !isLeftPlaying) {
+        if (!isBlinking || !isLeftPlaying || !gameOn) {
             layout.setText(leftPlayerFont, leftPlayer);
-            leftPlayerFont.draw(batch, layout, 105 - layout.width / 2, Global.HEIGHT - 40 - layout.height + 5);
+            leftPlayerFont.draw(batch, layout, (ban.width / 4) - (layout.width / 2) - 35, Global.HEIGHT - 40 - layout.height + 5);
         }
-        if (!isBlinking || isLeftPlaying) {
+        if (!isBlinking || isLeftPlaying || !gameOn) {
             layout.setText(rightPlayerFont, rightPlayer);
-            rightPlayerFont.draw(batch, layout, ban.width - 105 - layout.width / 2, Global.HEIGHT - 40 - layout.height + 5);
+            rightPlayerFont.draw(batch, layout, (ban.width  / 4 * 3) - (layout.width / 2) + 35, Global.HEIGHT - 40 - layout.height + 5);
         }
         // Si temps qui s'est écroulé > 0.5 seconde
         if (TimeUtils.nanoTime() - lastNanoBlink > 500000000) {
@@ -216,22 +226,16 @@ public class Scene {
     public void showPlayerTrophy(String side) {
         Texture texture = assets.get("design/trophy.png", Texture.class);
         if (side.equals(Global.LEFT)) {
-            batch.draw(texture, 15, board.height + 22);
+            batch.draw(texture, 15, ((float) Global.HEIGHT - (ban.height / 2)) - ((float) texture.getHeight() / 2));
         }
         if (side.equals(Global.RIGHT)) {
-            batch.draw(texture, ban.width - 15 - texture.getWidth(), board.height + 22);
+            batch.draw(texture, ban.width - texture.getWidth() - 15, ((float) Global.HEIGHT - (ban.height / 2)) - ((float) texture.getHeight() / 2));
         }
     }
 
     /*
     Partie affichage menu
      */
-
-    // Plateau de jeu recouvert par le menu (sur un fond noir transparent)
-    public void drawMenuBoard() {
-        drawRect(0, 0, board.width, board.height, transparentBlack);
-        drawLabels();
-    }
 
     // Les champs présents dans le menu
     public void drawLabels() {
@@ -284,15 +288,15 @@ public class Scene {
         layout.setText(writingFont, "X*X cases =");
         float maxFieldWidth = layout.width;
         writingFont.draw(batch, layout, 135, board.height - 370);
-        drawRect((board.width / 4) + 120, board.height - 370 - layout.height - 2, 150, 1, Color.WHITE);
+        drawRect((board.width / 4) + 120, board.height - 370 - layout.height - 2, 150, 1, Color.WHITE, true, false);
 
         layout.setText(writingFont, "N =");
         writingFont.draw(batch, layout, 135 + (maxFieldWidth - layout.width),board.height - 400);
-        drawRect((board.width / 4) + 120, board.height - 400 - layout.height - 2, 150, 1, Color.WHITE);
+        drawRect((board.width / 4) + 120, board.height - 400 - layout.height - 2, 150, 1, Color.WHITE, true, false);
 
         layout.setText(writingFont, "Channel =");
         writingFont.draw(batch, layout, 135 + (maxFieldWidth - layout.width),board.height - 430);
-        drawRect((board.width / 4) + 120, board.height - 430 - layout.height - 2, 150, 1, Color.WHITE);
+        drawRect((board.width / 4) + 120, board.height - 430 - layout.height - 2, 150, 1, Color.WHITE, true, false);
     }
 
     // Affichage des Widget interactifs
@@ -304,74 +308,94 @@ public class Scene {
     // Fonction qui regroupe la création de tous les Widgets (appelé par le constructeur)
     public void createWidgets() {
         // Boutons radios
-        radioJVJ = createRadioButton(radioGroup, "Joueur VS Joueur", (board.width / 2) - 250 - 10, board.height - 300, 250);
-        radioJVIA = createRadioButton(radioGroup, "Joueur VS IA", (board.width / 2) - 250 - 10, board.height - 350, 250);
-        radioIAVIA = createRadioButton(radioGroup, "[EN LIGNE] IA VS IA", (board.width / 2) + 10, board.height - 300, 250);
-        radioJVJOnline = createRadioButton(radioGroup, "[EN LIGNE] Joueur VS Joueur", (board.width / 2) + 10, board.height - 350, 250);
+        radioJVJ = createRadioButton(widgets, radioGroup, "Joueur VS Joueur", (board.width / 2) - 250 - 10, board.height - 300, 250);
+        radioJVIA = createRadioButton(widgets, radioGroup, "Joueur VS IA", (board.width / 2) - 250 - 10, board.height - 350, 250);
+        radioIAVIA = createRadioButton(widgets, radioGroup, "[EN LIGNE] IA VS IA", (board.width / 2) + 10, board.height - 300, 250);
+        radioJVJOnline = createRadioButton(widgets, radioGroup, "[EN LIGNE] Joueur VS Joueur", (board.width / 2) + 10, board.height - 350, 250);
 
         // TextField (inputs)
-        boardTilesRatioField = createTextField(Integer.toString(boardTilesRatio), (board.width / 4) + 100 + 10, board.height - 370 - 15 - 2, 150, 30);
+        boardTilesRatioField = createTextField(widgets, Integer.toString(boardTilesRatio), (board.width / 4) + 100 + 10, board.height - 370 - 15 - 2, 150, 30);
         onlyNumbersFilter(boardTilesRatioField);
-        nField = createTextField(Integer.toString(n), (board.width / 4) + 100 + 10, board.height - 400 - 15 - 2, 150, 30);
+        nField = createTextField(widgets, Integer.toString(n), (board.width / 4) + 100 + 10, board.height - 400 - 15 - 2, 150, 30);
         onlyNumbersFilter(nField);
-        codeChannelField = createTextField("", (board.width / 4) + 100 + 10, board.height - 430 - 15 - 2, 150, 30);
+        codeChannelField = createTextField(widgets, "", (board.width / 4) + 100 + 10, board.height - 430 - 15 - 2, 150, 30);
 
         // Bouton cliquable
-        playButton = createClickableButton("Jouer", (board.width / 2) - ((float) 150 / 2), board.height - 540, 150, 50);
+        playButton = createClickableButton(widgets, "Jouer", (board.width / 2) - ((float) 150 / 2), board.height - 540, 150, 50);
         startGameButtonEventListener(playButton);
+    }
+
+    // Donner des noms aux joueurs
+    public void setPlayersNames(String leftName, String rightName) {
+        leftPlayer = leftName;
+        rightPlayer = rightName;
     }
 
     /*
     Fonctions privées
     Seulement accessible par les méthodes de la classe
-    Les méthodes les plus générales se trouvent ici
+    Les méthodes les plus générales, moins orientées vers l'affichage, se trouvent ici
      */
 
     // Fonction pour dessiner des rectangles de couleur
-    private void drawRect(float x, float y, float width, float height, Color color) {
-        batch.end(); // On ferme le batch pour que SpriteBatch et ShapeRenderer ne soient pas ouvert en même temps
+    private void drawRect(float x, float y, float width, float height, Color color, boolean autoSetShape, boolean enableBlend) {
+        if (autoSetShape) {
+            batch.end(); // On ferme le batch pour que SpriteBatch et ShapeRenderer ne soient pas ouvert en même temps
+            if (enableBlend) {
+                // Pour activer la transparence
+                Gdx.gl.glEnable(GL20.GL_BLEND);
+                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            }
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        }
 
-        // Pour activer la transparence
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(color);
         shapeRenderer.rect(x, y, width, height);
-        shapeRenderer.end();
 
-        // Pour désactiver la transparence
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        batch.begin();
+        if (autoSetShape) {
+            shapeRenderer.end();
+            if (enableBlend) {
+                // Pour désactiver la transparence
+                Gdx.gl.glDisable(GL20.GL_BLEND);
+            }
+            batch.begin();
+        }
     }
 
     // Fonction qui retourne un input de type TextField
-    private TextField createTextField(String baseText, float x, float y, float width, float height) {
+    private TextField createTextField(ArrayList<Actor> actors, String baseText, float x, float y, float width, float height) {
         TextField textField = new TextField(baseText, skin);
         textField.setColor(Color.WHITE);
         textField.setPosition(x, y);
         textField.setSize(width, height);
-        stage.addActor(textField); // On ajoute le Widget au Stage qu'on lancera dans la boucle de jeu
+        actors.add(textField); // On ajoute cet Actor (Widget) à la liste des Actors
         return textField;
     }
 
-    // Fonction qui permet la création de tous les boutons
-    private TextButton createRadioButton(ButtonGroup<Button> buttonGroup, String baseText, float x, float y, float width) {
+    // Fonction qui permet la création de les bouton radio (un seul sélectionné)
+    private TextButton createRadioButton(ArrayList<Actor> actors, ButtonGroup<Button> buttonGroup, String baseText, float x, float y, float width) {
         TextButton radioButton = new TextButton(baseText, skin, "toggle");
         radioButton.setWidth(width);
         radioButton.setPosition(x, y);
         buttonGroup.add(radioButton);
-        stage.addActor(radioButton);
+        actors.add(radioButton);
         return radioButton;
     }
 
-    private TextButton createClickableButton(String baseText, float x, float y, float width, float height) {
+    // Fonction qui permet la création de bouton cliquable
+    private TextButton createClickableButton(ArrayList<Actor> actors, String baseText, float x, float y, float width, float height) {
         TextButton clickableButton = new TextButton(baseText, skin);
         clickableButton.setSize(width, height);
         clickableButton.setPosition(x, y);
-        stage.addActor(clickableButton);
+        actors.add(clickableButton);
         return clickableButton;
+    }
+
+    // Fonction permettant d'ajouter plusieurs Actors dans un Stage
+    private void addToStage(Stage stage, ArrayList<Actor> actors) {
+        for (Actor actor: actors) {
+            stage.addActor(actor);
+        }
     }
 
     // Retourne une nouvelle police d'écriture
@@ -410,12 +434,6 @@ public class Scene {
         pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
     }
 
-    // Donner des noms aux joueurs
-    private void setPlayersNames(String leftName, String rightName) {
-        leftPlayer = leftName;
-        rightPlayer = rightName;
-    }
-
     /*
     Déclarations des events listeners
     --------------------------------
@@ -444,27 +462,34 @@ public class Scene {
                 enableObjects();
                 if (radioGroup.getChecked() == radioJVJ) {
                     selectedMod = Global.JVJ;
-                    setPlayersNames(Global.J1, Global.J2);
                 } else if (radioGroup.getChecked() == radioJVIA) {
                     selectedMod = Global.JVIA;
-                    setPlayersNames(Global.J1, Global.IAG20);
                     disableObjects();
                 } else if (radioGroup.getChecked() == radioIAVIA) {
                     selectedMod = Global.IAVIA;
-                    setPlayersNames(Global.IAG20, Global.IA);
                     disableObjects();
                 } else {
                     selectedMod = Global.JVJONLINE;
-                    setPlayersNames(Global.J1TOI, Global.J2);
                 }
                 // On récupère le contenu des inputs
-                if (!boardTilesRatioField.getText().isEmpty()) setBoardTilesRatio(Integer.parseInt(boardTilesRatioField.getText()));
-                if (!nField.getText().isEmpty()) n = Integer.parseInt(nField.getText());
+                if (!boardTilesRatioField.getText().isEmpty()) {
+                    int tempNb = Integer.parseInt(boardTilesRatioField.getText());
+                    if (tempNb >= 2 && tempNb <= 300) setBoardTilesRatio(tempNb);
+                }
+                if (!nField.getText().isEmpty()) {
+                    int tempNb = Integer.parseInt(nField.getText());
+                    if (tempNb >= 1) n = tempNb;
+                }
                 codeChannel = codeChannelField.getText();
 
                 playButtonPressed = true;
+                menuToggle = false;
                 gameOn = true;
                 isLeftPlaying = true;
+                mainText = "Pause";
+                crossList.clear();
+                // On supprime le contenu de Stage pour qu'on ne puisse pas cliquer sur les Widgets quand ils ne sont pas visibles
+                stage.clear();
             }
         });
     }
