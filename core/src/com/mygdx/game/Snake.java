@@ -73,8 +73,8 @@ public class Snake {
     // Elle renvoie true si le snake a bien bougé, false sinon (donc game over)
     public boolean move(boolean grow) {
         ArrayList<Integer> futureHead = futureHead(direction);
-        String futureResult = previewGameOver(futureHead);
-        if (futureResult.equals(Global.NOTHING) || futureResult.equals(Global.STRAWBERRY) || (futureHead.equals(snake.get(snake.size() - 1)) && snake.size() != 2 && !grow)) {
+        String futureResult = previewGameOver(futureHead, grow);
+        if (futureResult.equals(Global.NOTHING) || futureResult.equals(Global.STRAWBERRY)) {
             if (futureResult.equals(Global.STRAWBERRY)) {
                 objects.removeStrawberry(futureHead);
                 if (snake.size() > 1) removeLast();
@@ -89,32 +89,26 @@ public class Snake {
         }
     }
 
-    // Fonction permettant de vérifier si le snake va heurter quelque chose avec son futur coup
-    public String previewGameOver(ArrayList<Integer> futureHead) {
-        if (board.usedPositions.contains(futureHead)) {
-            if (objects.strawberries.contains(futureHead)) return Global.STRAWBERRY;
-            else return Global.TOUCHED;
-        } else if (board.outsideLimits.contains(futureHead)) {
-            return Global.TOUCHED;
-        }
-        return Global.NOTHING;
-    }
-
     // Fonction permettant de savoir, avant que le joueur fasse son coup, si il est dans une situation dans lequel son snake est bloqué
     public boolean isBlocked(boolean grow) {
         ArrayList<ArrayList<Integer>> tupleList = new ArrayList<>(Arrays.asList(futureHead(Global.GAUCHE), futureHead(Global.DROITE), futureHead(Global.HAUT), futureHead(Global.BAS)));
+        String futureResult;
         for (ArrayList<Integer> pos: tupleList) {
-            if (board.usedPositions.contains(pos)) {
-                if (!objects.strawberries.contains(pos)) {
-                    // Si le snake ne grandit pas et qu'il veut aller sur sa queue, il peut
-                    if (snake.size() != 2 && pos.equals(snake.get(snake.size() - 1))) {
-                        if (!grow) return false; // Dès qu'il y a un potentiel endroit libre on renvoie false
-                    }
-                } else return false;
-            } else if (board.outsideLimits.contains(pos)) {}
-            else return false;
+            futureResult = previewGameOver(pos, grow);
+            if (futureResult.equals(Global.NOTHING) || futureResult.equals(Global.STRAWBERRY)) return false;
         }
         return true;
+    }
+
+    // Fonction permettant de vérifier si le snake va heurter quelque chose avec son futur coup
+    public String previewGameOver(ArrayList<Integer> futureHead, boolean grow) {
+        if (board.usedPositions.contains(futureHead)) {
+            if (snake.size() != 2 && futureHead.equals(snake.get(snake.size() - 1)) && !grow) return Global.NOTHING;
+            else if (objects.strawberries.contains(futureHead)) return Global.STRAWBERRY;
+            else return Global.TOUCHED;
+        } else if (board.outsideLimits.contains(futureHead)) {
+            return Global.TOUCHED;
+        } else return Global.NOTHING;
     }
 
     // Permet de renvoyer les coordonnées du futur emplacement du snake après son coup

@@ -103,7 +103,10 @@ public class SnakeBlockade extends ApplicationAdapter {
 			scene.setPlayersNames(Global.J1, Global.J2);
 		} else if (scene.selectedMod.equals(Global.JVIA)) {
 			snake1 = new Snake(batch, assets, scene, board, objects, Global.LEFT);
-			// snake2 = new IAG20();
+			snake2 = new IAG20(batch, assets, scene, board, objects, Global.RIGHT);
+			((IAG20) snake2).otherSnake = snake1; // Appel à une instance spécifique de IAG20 grâce au casting
+			System.out.println(snake2);
+			scene.setPlayersNames(Global.J1, Global.IAG20);
 		} else if (scene.selectedMod.equals(Global.IAVIA)) {
 			// Networking
 		} else {
@@ -124,11 +127,16 @@ public class SnakeBlockade extends ApplicationAdapter {
 	// Ensemble de directives exécutés quand un snake se déplace
 	public void actionsMove(String direction) {
 		currentSnake.setDirection(direction);
-		justGameOver = !(currentSnake.move(haveToGrow.get(currentSnake)));
+		justGameOver = !(currentSnake.move(haveToGrow.get(currentSnake))); // Le snake bouge ici
 		gameOver = justGameOver; // justGameOver = true sur 1 frame seulement
 		lapWithoutStrawberry++;
 		lapWithoutGrow++;
 		haveToGrow.replace(currentSnake, false);
+
+		Snake otherSnake = getOtherSnake();
+		if (otherSnake instanceof IAG20) {
+			((IAG20) otherSnake).otherSnake = currentSnake;
+		}
 		changeSnake(); // Au tour de l'autre snake
 	}
 
@@ -207,6 +215,12 @@ public class SnakeBlockade extends ApplicationAdapter {
 		if (currentSnake == snake1) currentSnake = snake2;
 		else currentSnake = snake1;
 		scene.isLeftPlaying = !scene.isLeftPlaying;
+	}
+
+	// Fonction qui renvoie le snake ennemi
+	public Snake getOtherSnake() {
+		if (currentSnake == snake1) return snake2;
+		else return snake1;
 	}
 
 	// Fonction exécuté lorsque l'application se ferme, pas besoin de l'appeler
