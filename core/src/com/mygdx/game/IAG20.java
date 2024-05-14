@@ -28,7 +28,7 @@ public class IAG20 extends Snake {
 
         ArrayList<String> getPossibleDirections() {
             ArrayList<String> directions = getAllDirections();
-            directions.removeIf(direction -> !isValidDirection(direction));
+            directions.removeIf(this::isValidDirection);
             return directions;
         }
         // Renvoi toutes les directions possibles.
