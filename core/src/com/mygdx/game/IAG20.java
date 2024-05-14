@@ -28,7 +28,7 @@ public class IAG20 extends Snake {
 
         ArrayList<String> getPossibleDirections() {
             ArrayList<String> directions = getAllDirections();
-            directions.removeIf(this::isBlocked);
+            directions.removeIf(direction -> !isValidDirection(direction));
             return directions;
         }
         // Renvoi toutes les directions possibles.
@@ -41,9 +41,10 @@ public class IAG20 extends Snake {
             directions.add(Global.DROITE);
             return directions;
         }
-        boolean isBlocked(String direction) {
+        boolean isValidDirection(String direction) {
             ArrayList<Integer> futureHead = futureHead(direction);
-            return board.usedPositions.contains(futureHead) || board.outsideLimits.contains(futureHead);
+            String result = previewGameOver(futureHead, false);
+            return !result.equals(Global.TOUCHED);
         }
 
     @Override
