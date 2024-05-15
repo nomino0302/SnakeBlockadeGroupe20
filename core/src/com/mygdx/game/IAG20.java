@@ -16,6 +16,8 @@ public class IAG20 extends Snake {
     void evaluate() {
         // Algo pour l'IA
             ArrayList<String> possibleDirections = getPossibleDirections();
+
+              
             if (possibleDirections.isEmpty()) {
                 // Si toutes les directions mènent à une collision, choisir une direction aléatoire pour se sucider
                 possibleDirections = getAllDirections();
@@ -44,7 +46,7 @@ public class IAG20 extends Snake {
         boolean isValidDirection(String direction) {
             ArrayList<Integer> futureHead = futureHead(direction);
             String result = previewGameOver(futureHead, false);
-            return !result.equals(Global.TOUCHED);
+            return result.equals(Global.TOUCHED);
         }
 
     @Override
@@ -53,5 +55,8 @@ public class IAG20 extends Snake {
 
         return super.move(grow);
     }
+
+
+    
 
 }
