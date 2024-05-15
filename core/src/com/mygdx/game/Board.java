@@ -24,27 +24,27 @@ public class Board {
     Board(Scene scene) {
         this.scene = scene;
 
-        illegalPos = new ArrayList<>(Arrays.asList(tuple(0, scene.boardTilesRatio - 1), tuple(0, scene.boardTilesRatio - 2),
-                tuple(1, scene.boardTilesRatio - 1), tuple(scene.boardTilesRatio - 1, 0),
-                tuple(scene.boardTilesRatio - 2, 0), tuple(scene.boardTilesRatio - 1, 1)));
+        illegalPos = new ArrayList<>(Arrays.asList(Global.tuple(0, scene.boardTilesRatio - 1), Global.tuple(0, scene.boardTilesRatio - 2),
+                Global.tuple(1, scene.boardTilesRatio - 1), Global.tuple(scene.boardTilesRatio - 1, 0),
+                Global.tuple(scene.boardTilesRatio - 2, 0), Global.tuple(scene.boardTilesRatio - 1, 1)));
 
         // Tableau des positions possibles
         for (int x = 0; x < scene.boardTilesRatio; x++) {
             for (int y = 0; y < scene.boardTilesRatio; y++) {
-                possiblePositions.add(tuple(x, y));
-                unusedPositions.add(tuple(x, y));
-                if (!illegalPos.contains(tuple(x, y))) unusedPositionsWIP.add(tuple(x, y));
+                possiblePositions.add(Global.tuple(x, y));
+                unusedPositions.add(Global.tuple(x, y));
+                if (!illegalPos.contains(Global.tuple(x, y))) unusedPositionsWIP.add(Global.tuple(x, y));
             }
         }
 
         // Limites du plateau
         for (int i = 0; i < scene.boardTilesRatio; i++) {
-            outsideLimits.add(tuple(-1, i)); // Haut
-            outsideLimits.add(tuple(scene.boardTilesRatio, i)); // Bas
+            outsideLimits.add(Global.tuple(-1, i)); // Haut
+            outsideLimits.add(Global.tuple(scene.boardTilesRatio, i)); // Bas
         }
         for (int i = 0; i < scene.boardTilesRatio; i++) {
-            outsideLimits.add(tuple(i, -1)); // Gauche
-            outsideLimits.add(tuple(i, scene.boardTilesRatio)); // Droit
+            outsideLimits.add(Global.tuple(i, -1)); // Gauche
+            outsideLimits.add(Global.tuple(i, scene.boardTilesRatio)); // Droit
         }
     }
 
@@ -60,13 +60,5 @@ public class Board {
         usedPositions.remove(givenTuple);
         unusedPositions.add(givenTuple);
         if (!illegalPos.contains(givenTuple)) unusedPositionsWIP.add(givenTuple);
-    }
-
-    // Fonction qui retourne un "tuple" de int (pour la position par rapport aux cases)
-    public ArrayList<Integer> tuple(int x, int y) {
-        ArrayList<Integer> newList = new ArrayList<>();
-        newList.add(x);
-        newList.add(y);
-        return newList;
     }
 }

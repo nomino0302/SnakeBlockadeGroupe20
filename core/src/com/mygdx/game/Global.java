@@ -5,6 +5,8 @@ Classe Global.java
 Classe contenant les variables constantes qui peuvent être utilisées par tout les fichiers sans importer ladite classe
 */
 
+import java.util.ArrayList;
+
 public class Global {
     // public static final rend la constante globale
     public static final int WIDTH = 560;
@@ -36,4 +38,16 @@ public class Global {
     public static final String TOUCHED = "TOUCHED";
     public static final String STRAWBERRY = "STRAWBERRY";
     public static final String NOTHING = "NOTHING";
+
+    // État du Thread
+    public static final String STOPTHREAD = "STOPTHREAD";
+    public static final String BLOCKED = "BLOCKED";
+
+    // Fonction qui retourne un "tuple" de int (pour la position par rapport aux cases)
+    public static ArrayList<Integer> tuple(int x, int y) {
+        ArrayList<Integer> newList = new ArrayList<>();
+        newList.add(x);
+        newList.add(y);
+        return newList;
+    }
 }

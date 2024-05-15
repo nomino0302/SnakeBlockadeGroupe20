@@ -459,15 +459,14 @@ public class Scene {
         button.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                enableObjects();
+                disableObjects();
                 if (radioGroup.getChecked() == radioJVJ) {
                     selectedMod = Global.JVJ;
+                    enableObjects();
                 } else if (radioGroup.getChecked() == radioJVIA) {
                     selectedMod = Global.JVIA;
-                    disableObjects();
                 } else if (radioGroup.getChecked() == radioIAVIA) {
                     selectedMod = Global.IAVIA;
-                    disableObjects();
                 } else {
                     selectedMod = Global.JVJONLINE;
                 }

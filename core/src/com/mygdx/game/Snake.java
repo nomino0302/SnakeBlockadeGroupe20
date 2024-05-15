@@ -25,12 +25,14 @@ public class Snake {
     ArrayMap<String, ArrayMap<String, Texture>> snakeAssets = new ArrayMap<>();
     ArrayList<ArrayList<Integer>> snake = new ArrayList<>();
     Array<Rectangle> snakeRectangles = new Array<>();
+    ArrayList<ArrayList<Integer>> gameOverSnake = new ArrayList<>();
 
     String side; // "LEFT" ou "RIGHT"
     String direction;
     String lastDirection;
     String gameOverDirection;
     String color;
+    String name;
 
     Snake(SpriteBatch batch, Assets assets, Scene scene, Board board, Objects objects, String side) {
         this.batch = batch;
@@ -62,9 +64,9 @@ public class Snake {
     // Fonction de départ pour créer le snake, on le met manuellement en haut à gauche ou en bas à droite
     public void initSnake() {
         if (side.equals(Global.LEFT)) {
-            addPart(0, scene.boardTilesRatio - 1);
+            addPart(0, scene.boardTilesRatio - 1, true);
         } else {
-            addPart(scene.boardTilesRatio - 1, 0);
+            addPart(scene.boardTilesRatio - 1, 0, true);
         }
     }
 
@@ -79,10 +81,14 @@ public class Snake {
                 objects.removeStrawberry(futureHead);
                 if (snake.size() > 1) removeLast();
             }
-            addPart(futureHead.get(0), futureHead.get(1));
+            addPart(futureHead.get(0), futureHead.get(1), true);
             if (!grow) removeLast();
             return true;
         } else {
+            gameOverSnake = new ArrayList<>(snake); // Pour les communications
+            gameOverSnake.add(0, futureHead);
+            if (!grow) gameOverSnake.remove(gameOverSnake.size() - 1);
+
             gameOverDirection = direction;
             direction = lastDirection;
             return false;
@@ -116,13 +122,13 @@ public class Snake {
         ArrayList<Integer> currentHead = snake.get(0);
         switch (givenDirection) {
             case Global.HAUT:
-                return board.tuple(currentHead.get(0), currentHead.get(1) + 1);
+                return Global.tuple(currentHead.get(0), currentHead.get(1) + 1);
             case Global.BAS:
-                return board.tuple(currentHead.get(0), currentHead.get(1) - 1);
+                return Global.tuple(currentHead.get(0), currentHead.get(1) - 1);
             case Global.GAUCHE:
-                return board.tuple(currentHead.get(0) - 1, currentHead.get(1));
+                return Global.tuple(currentHead.get(0) - 1, currentHead.get(1));
             default:
-                return board.tuple(currentHead.get(0) + 1, currentHead.get(1));
+                return Global.tuple(currentHead.get(0) + 1, currentHead.get(1));
         }
     }
 
@@ -132,11 +138,26 @@ public class Snake {
         direction = newDirection;
     }
 
-    // Permet d'ajouter 1 case de longueur au snake (mis au tout début de la liste (tête))
-    public void addPart(int x, int y) {
-        snake.add(0, board.tuple(x, y));
-        snakeRectangles.insert(0, new Rectangle(x * scene.pixelsForTile, y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
-        board.addElement(board.tuple(x, y));
+    // Permet de changer la liste du snake
+    public void setNewSnake(ArrayList<ArrayList<Integer>> snakeList) {
+        while (!snake.isEmpty()) {
+            removeLast();
+        }
+        for (ArrayList<Integer> pos: snakeList) {
+            addPart(pos.get(0), pos.get(1), false);
+        }
+    }
+
+    // Permet d'ajouter 1 case de longueur au snake (mis au tout début de la liste (tête) si addStart = true)
+    public void addPart(int x, int y, boolean addStart) {
+        if (addStart) {
+            snake.add(0, Global.tuple(x, y));
+            snakeRectangles.insert(0, new Rectangle(x * scene.pixelsForTile, y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
+        } else {
+            snake.add(Global.tuple(x, y));
+            snakeRectangles.add(new Rectangle(x * scene.pixelsForTile, y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
+        }
+        board.addElement(Global.tuple(x, y));
     }
 
     // Permet d'enlever 1 case de longueur au snake (la queue)
@@ -160,6 +181,15 @@ public class Snake {
         if (index == 0) return getHead();
         if (index == snakeRectangles.size - 1) return getTail();
         else return getMiddlePart(index);
+    }
+
+    // Règle la direction en fonction de l'ancienne tête
+    public void setCorrectDirection(ArrayList<Integer> lastHeadPos) {
+        ArrayList<Integer> currentHead = snake.get(0);
+        if (currentHead.get(0) > lastHeadPos.get(0)) setDirection(Global.DROITE);
+        else if (currentHead.get(0) < lastHeadPos.get(0)) setDirection(Global.GAUCHE);
+        else if (currentHead.get(1) > lastHeadPos.get(1)) setDirection(Global.HAUT);
+        else setDirection(Global.BAS);
     }
 
     // Renvoie la bonne Texture pour la tête (selon la direction)
