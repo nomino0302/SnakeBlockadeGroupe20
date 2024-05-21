@@ -29,7 +29,6 @@ public class SnakeBlockade extends ApplicationAdapter {
 	HashMap<Snake, Boolean> haveToGrow;
 	boolean gameOver = false;
 	boolean justGameOver = false;
-	boolean verifyBlocked = true;
 
 	// Cette fonction est exécuté lors de la création de l'application, pas besoin de l'appeler
 	@Override // Réécrit la méthode parente (de ApplicationAdapter)
@@ -49,17 +48,20 @@ public class SnakeBlockade extends ApplicationAdapter {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		batch.begin();
-		scene.drawBoard();
+		scene.drawBoard(scene.lines, scene.columns);
 
 		if (scene.playButtonPressed) initNewGame();
 
 		manageInput();
 
-		if (net.netActivated && (!net.gameStarted || net.setupEnded)) netWaitSetup();
-		else if (scene.gameOn || gameOver) {
+		System.out.println();
+		System.out.println(scene.gameOn);
+		System.out.println(gameOver);
+		System.out.println();
 
-			netFreshUpdate(); // Si notre tour vient de se déclencher
-			netUpdateSnakes();
+		if (scene.gameOn || gameOver) {
+
+			netUpdateOtherSnake(); // Si myTurn = false et receivedSomething = true
 
 			objects.drawObjects();
 			snake1.drawSnake();
@@ -67,18 +69,18 @@ public class SnakeBlockade extends ApplicationAdapter {
 			scene.drawCross();
 
 			// Si Game over
-			if (justGameOver) {
+			if (justGameOver) { // Si justGameOver = true, alors gameOver = true aussi
 				justGameOver = false;
-				if (!net.netActivated) changeSnake(); // Celui qui a fait le coup perdant est le snake d'avant
+				gameOver = true;
+				changeSnake(); // Celui qui a fait le coup perdant est le snake d'avant
 				addCross(currentSnake.futureHead(currentSnake.gameOverDirection));
 				setGameOver();
 			}
 
 			// Si snake bloqué (sans faire de coup)
-			if (currentSnake.isBlocked(haveToGrow.get(currentSnake)) && !gameOver && verifyBlocked) {
+			if (currentSnake.isBlocked(haveToGrow.get(currentSnake)) && !gameOver) {
 				gameOver = true;
 				crossIsBlocked();
-				if (net.netActivated) net.channel.send(Global.BLOCKED);
 				setGameOver();
 			}
 
@@ -110,15 +112,153 @@ public class SnakeBlockade extends ApplicationAdapter {
 		if (scene.selectedMod.equals(Global.JVJ)) JVJRules();
 		else if (scene.selectedMod.equals(Global.JVIA)) JVIARules();
 		else if (scene.selectedMod.equals(Global.IAVIA)) IAVIARules();
-		else JVJOnlineRules();
 
 		scene.playButtonPressed = false;
 		lapWithoutStrawberry = 0;
 		lapWithoutGrow = 1;
 		gameOver = false;
 		justGameOver = false;
-		verifyBlocked = true;
 	}
+
+	// Fonction exécuté 1 fois par frame (30 fois par seconde si 30 FPS) qui permet de gérer les évenements utilisateur (touches du clavier, click, ...)
+	public void manageInput() {
+		// Touches pour bouger
+		if (scene.gameOn && !scene.menuToggle && !(currentSnake instanceof IAG20) && !net.netActivated) {
+			// LibGDX pense que notre clavier est QWERTY !
+			if (Gdx.input.isKeyJustPressed(Input.Keys.W) || Gdx.input.isKeyJustPressed(Input.Keys.UP)) actionsMove(Global.HAUT);
+			if (Gdx.input.isKeyJustPressed(Input.Keys.D) || Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) actionsMove(Global.DROITE);
+			if (Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) actionsMove(Global.BAS);
+			if (Gdx.input.isKeyJustPressed(Input.Keys.A) || Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) actionsMove(Global.GAUCHE);
+		}
+
+		if (currentSnake instanceof IAG20 && (!net.netActivated || net.myTurn)) {
+			actionsMove(Global.HAUT);
+		}
+
+		// Touches générales
+		// Menu
+		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+			scene.menuToggle = !scene.menuToggle;
+			scene.firstMenuToggle = true;
+		}
+
+		// Clicks
+		if (Gdx.input.justTouched()) {
+			float x = Gdx.input.getX();
+			// On inverse Y car, pour les fenêtres, l'origine (0, 0) des clicks est en haut à gauche (alors que pour libGDX c'est en bas à gauche)
+			float y = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+			if (scene.menu.contains(x, y)) {
+				scene.menuToggle = !scene.menuToggle;
+				scene.firstMenuToggle = true;
+			}
+
+			if (scene.sound.contains(x, y)) {
+				scene.isSoundOn = !scene.isSoundOn;
+			}
+		}
+	}
+
+	// Ensemble de directives exécutés quand un snake se déplace
+	public void actionsMove(String direction) {
+		currentSnake.setDirection(direction);
+		justGameOver = !(currentSnake.move(haveToGrow.get(currentSnake))); // Le snake bouge ici
+		gameOver = justGameOver; // justGameOver = true sur 1 frame seulement
+
+		coups++;
+		if (coups >= 2) {
+			lapWithoutStrawberry++;
+			lapWithoutGrow++;
+			coups -= 2;
+		}
+		haveToGrow.replace(currentSnake, false);
+
+		Snake otherSnake = getOtherSnake();
+		if (otherSnake instanceof IAG20) {
+			((IAG20) otherSnake).otherSnake = currentSnake;
+		}
+
+		if (net.netActivated) {
+			if (net.myTurn) {
+				// On envoie la direction modifié par l'IA : soit le coup Game Over soit le coup normal
+				if (gameOver) net.writeChannel.send(net.directionToLetter(currentSnake.gameOverDirection));
+				else net.writeChannel.send(net.directionToLetter(currentSnake.direction));
+			}
+			net.myTurn = !net.myTurn;
+		}
+
+		changeSnake(); // Au tour de l'autre snake
+	}
+
+	// Ensemble de directives exécutés quand un Game Over se produit
+	public void setGameOver() {
+		scene.gameOn = false;
+		scene.menuToggle= true;
+		scene.firstMenuToggle = true;
+
+		if (currentSnake == snake1) {
+			scene.playerWon = snake2.side;
+			scene.mainText = snake2.name + " wins!";
+		} else {
+			scene.playerWon = snake1.side;
+			scene.mainText = snake1.name + " wins!";
+		}
+		if (net.netActivated) net.stopChannel();
+	}
+
+	// Fonction appelée pour update le snake ennemi (ou nous mettre gagnant si il a donné un coup illégal
+	public void netUpdateOtherSnake() {
+		if (net.netActivated && !net.myTurn && net.receivedSomething) {
+			net.receivedSomething = false;
+			if (net.direction.equals(Global.INVALID)) {
+				gameOver = true;
+				setGameOver();
+				scene.mainText = "Coup illégal! " + scene.mainText;
+				scene.crossList.clear();
+			} else {
+				actionsMove(net.direction);
+			}
+		}
+	}
+
+	// Fonction permettant de changer de joueur (de permuter)
+	public void changeSnake() {
+		if (currentSnake == snake1) currentSnake = snake2;
+		else currentSnake = snake1;
+		scene.isLeftPlaying = !scene.isLeftPlaying;
+	}
+
+	// Fonction qui renvoie le snake ennemi
+	public Snake getOtherSnake() {
+		if (currentSnake == snake1) return snake2;
+		else return snake1;
+	}
+
+	// Ajout de croix tout autour de la tête du snake
+	public void crossIsBlocked() {
+		addCross(currentSnake.futureHead(Global.HAUT));
+		addCross(currentSnake.futureHead(Global.DROITE));
+		addCross(currentSnake.futureHead(Global.BAS));
+		addCross(currentSnake.futureHead(Global.GAUCHE));
+	}
+
+	// Fonction qui ajoute une position de croix pour dire où le snake s'est planté
+	public void addCross(ArrayList<Integer> pos) {
+		ArrayList<Float> newPos = new ArrayList<>();
+		newPos.add((float) pos.get(0));
+		newPos.add((float) pos.get(1));
+		if (board.outsideLimits.contains(pos)) {
+			if (newPos.get(0) < 0) newPos.set(0, -1 + 0.5f);
+			else if (newPos.get(0) > scene.boardTilesRatio - 1) newPos.set(0, (scene.boardTilesRatio - 1) + 0.5f);
+			else if (newPos.get(1) < 0) newPos.set(1, -1 + 0.5f);
+			else if (newPos.get(1) > scene.boardTilesRatio - 1) newPos.set(1, (scene.boardTilesRatio - 1) + 0.5f);
+		}
+		scene.crossList.add(newPos);
+	}
+
+	/*
+	Règles selon les modes de jeu
+	 */
 
 	// Règles JVJ
 	public void JVJRules() {
@@ -149,221 +289,31 @@ public class SnakeBlockade extends ApplicationAdapter {
 
 	// Règles IAVIA (déclaration des snakes dans netWaitSetup (render))
 	public void IAVIARules() {
-		snake1 = new IAG20(batch, assets, scene, board, objects, Global.LEFT);
-		snake2 = new IAG20(batch, assets, scene, board, objects, Global.RIGHT);
-		net.startChannel(snake1, snake2, scene.codeChannel, Global.IAVIA);
-		net.channel.send(net.myWatermark);
-		net.reader.start();
-	}
-
-	// Règles JVJOnline (déclaration des snakes dans netWaitSetup (render))
-	public void JVJOnlineRules() {
-		snake1 = new Snake(batch, assets, scene, board, objects, Global.LEFT);
-		snake2 = new Snake(batch, assets, scene, board, objects, Global.RIGHT);
-		net.startChannel(snake1, snake2, scene.codeChannel, Global.JVJONLINE);
-		net.channel.send(net.myWatermark);
-		net.reader.start();
-	}
-
-	// Ensemble de directives exécutés quand un snake se déplace
-	public void actionsMove(String direction) {
-		currentSnake.setDirection(direction);
-		justGameOver = !(currentSnake.move(haveToGrow.get(currentSnake))); // Le snake bouge ici
-		gameOver = justGameOver; // justGameOver = true sur 1 frame seulement
-
-		if (net.netActivated) coups += 2;
-		else coups++;
-		if (coups >= 2) {
-			lapWithoutStrawberry++;
-			lapWithoutGrow++;
-			coups -= 2;
-		}
-		haveToGrow.replace(currentSnake, false);
-
-		Snake otherSnake = getOtherSnake();
-		if (otherSnake instanceof IAG20) {
-			((IAG20) otherSnake).otherSnake = currentSnake;
-		}
-
-		if (net.netActivated && net.myTurn && !net.finishedPlaying) {
-			if (justGameOver) net.channel.send(net.snakeListToFormat(currentSnake.gameOverSnake));
-			else net.channel.send(net.snakeListToFormat(currentSnake.snake));
-			net.finishedPlaying = true;
-			scene.isLeftPlaying = !scene.isLeftPlaying;
-			verifyBlocked = false;
+		if (scene.onlinePlayFirst) {
+			snake1 = new IAG20(batch, assets, scene, board, objects, Global.LEFT);
+			snake2 = new Snake(batch, assets, scene, board, objects, Global.RIGHT);
+			snake1.name = Global.IAG20;
+			snake2.name = Global.IA;
 		} else {
-			changeSnake(); // Au tour de l'autre snake
+			snake1 = new Snake(batch, assets, scene, board, objects, Global.LEFT);
+			snake2 = new IAG20(batch, assets, scene, board, objects, Global.RIGHT);
+			snake1.name = Global.IA;
+			snake2.name = Global.IAG20;
 		}
-	}
+		scene.setPlayersNames(snake1.name, snake2.name);
+		snake1.initSnakeTournament();
+		snake2.initSnakeTournament();
+		currentSnake = snake1;
+		haveToGrow = new HashMap<Snake, Boolean>() {{put(snake1, false); put(snake2, false);}};
+		objects.addRocksTournament();
 
-	// Ensemble de directives exécutés quand un Game Over se produit
-	public void setGameOver() {
-		scene.gameOn = false;
-		scene.menuToggle= true;
-		scene.firstMenuToggle = true;
-
-		if (currentSnake == snake1) {
-			scene.playerWon = snake2.side;
-			scene.mainText = snake2.name + " wins!";
-		} else {
-			scene.playerWon = snake1.side;
-			scene.mainText = snake1.name + " wins!";
-		}
-		if (net.netActivated) net.stopChannel();
-	}
-
-	// Fonction exécuté 1 fois par frame (30 fois par seconde si 30 FPS) qui permet de gérer les évenements utilisateur (touches du clavier, click, ...)
-	public void manageInput() {
-		// Touches pour bouger
-		if (scene.gameOn && !scene.menuToggle && !(currentSnake instanceof IAG20) && (!net.netActivated || (net.myTurn && !net.finishedPlaying))) {
-			// LibGDX pense que notre clavier est QWERTY !
-			if (Gdx.input.isKeyJustPressed(Input.Keys.W) || Gdx.input.isKeyJustPressed(Input.Keys.UP)) actionsMove(Global.HAUT);
-			if (Gdx.input.isKeyJustPressed(Input.Keys.D) || Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) actionsMove(Global.DROITE);
-			if (Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) actionsMove(Global.BAS);
-			if (Gdx.input.isKeyJustPressed(Input.Keys.A) || Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) actionsMove(Global.GAUCHE);
-		}
-
-		if (currentSnake instanceof IAG20 && (!net.netActivated || (net.myTurn && !net.finishedPlaying))) {
-			actionsMove(Global.HAUT);
-		}
-
-		// Touches générales
-		// Menu
-		if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-			scene.menuToggle = !scene.menuToggle;
-			scene.firstMenuToggle = true;
-		}
-
-		// Clicks
-		if (Gdx.input.justTouched()) {
-			float x = Gdx.input.getX();
-			// On inverse Y car, pour les fenêtres, l'origine (0, 0) des clicks est en haut à gauche (alors que pour libGDX c'est en bas à gauche)
-			float y = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-			if (scene.menu.contains(x, y)) {
-				scene.menuToggle = !scene.menuToggle;
-				scene.firstMenuToggle = true;
-			}
-
-			if (scene.sound.contains(x, y)) {
-				scene.isSoundOn = !scene.isSoundOn;
-			}
-		}
+		net.startChannel(scene.codeChannelRead, scene.codeChannelWrite, scene.onlinePlayFirst);
+		net.reader.start();
 	}
 
 	/*
-	Fonctions pour la communication internet
+	Fin des règles
 	 */
-
-	// TODO: Pb affichage quand J1 joue alors que le J2 n'a pas encore rejoint, on peut pas toggle le menu sur un mode de jeu IA, Logique IA, Structure + commentaires, sons
-	public void netWaitSetup() {
-		if (net.setupEnded) {
-			snake1 = net.firstSnake;
-			snake1.initSnake();
-			snake2 = net.secondSnake;
-			snake2.initSnake();
-			scene.setPlayersNames(snake1.name, snake2.name);
-
-			if (net.areYouFirst) {
-				net.updatedSnakeList = new ArrayList<>(snake2.snake);
-				currentSnake = snake1;
-			} else {
-				net.updatedSnakeList = new ArrayList<>(snake1.snake);
-				currentSnake = snake2;
-			}
-
-			haveToGrow = new HashMap<Snake, Boolean>() {{put(snake1, false); put(snake2, false);}};
-			net.setupEnded = false;
-		}
-	}
-
-	// Fonction exécuté quand notre thread reader reçois un message qui déclanche notre tour
-	public void netFreshUpdate() {
-		// Si c'est à nous de jouer (juste une fois)
-		if (net.myTurn && !net.finishedPlaying && net.freshlyUpdated) {
-
-			net.freshlyUpdated = false;
-			verifyBlocked = true;
-			scene.isLeftPlaying = !scene.isLeftPlaying;
-
-			if (currentSnake == snake1) netGetNewAndVerifyLoose(net.secondSnake);
-			else netGetNewAndVerifyLoose(net.firstSnake);
-		}
-	}
-
-	// Récupère le nouveau snake obtenu par communication, et vérifie s'il est perdant
-	public void netGetNewAndVerifyLoose(Snake snake) {
-		ArrayList<ArrayList<Integer>> lastSnakeList = new ArrayList<>(snake.snake);
-		ArrayList<Integer> lastHeadPos = lastSnakeList.get(0);
-		String lastDirection = snake.direction;
-
-		// Vérifier si le snake ennemi ne s'est pas bloqué
-		if (net.blocked) {
-			changeSnake();
-			justGameOver = false;
-			gameOver = true;
-			crossIsBlocked();
-			setGameOver();
-		} else {
-			// Confirmer la direction et update le snake
-			snake.setNewSnake(net.updatedSnakeList);
-			snake.setCorrectDirection(lastHeadPos);
-
-			// ...Et planté
-			snake.setNewSnake(lastSnakeList);
-			ArrayList<Integer> futureHead = snake.futureHead(snake.direction);
-			if (snake.previewGameOver(futureHead, false).equals(Global.TOUCHED)) {
-				snake.direction = lastDirection;
-				addCross(futureHead);
-				changeSnake();
-				justGameOver = false;
-				gameOver = true;
-				setGameOver();
-			} else snake.setNewSnake(net.updatedSnakeList);
-		}
-	}
-
-	public void netUpdateSnakes() {
-		if (net.netActivated) {
-			snake1 = net.firstSnake;
-			snake2 = net.secondSnake;
-		}
-	}
-
-	// Ajout de croix tout autour de la tête du snake
-	public void crossIsBlocked() {
-		addCross(currentSnake.futureHead(Global.HAUT));
-		addCross(currentSnake.futureHead(Global.DROITE));
-		addCross(currentSnake.futureHead(Global.BAS));
-		addCross(currentSnake.futureHead(Global.GAUCHE));
-	}
-
-	// Fonction qui ajoute une position de croix pour dire où le snake s'est planté
-	public void addCross(ArrayList<Integer> pos) {
-		ArrayList<Float> newPos = new ArrayList<>();
-		newPos.add((float) pos.get(0));
-		newPos.add((float) pos.get(1));
-		if (board.outsideLimits.contains(pos)) {
-			if (newPos.get(0) < 0) newPos.set(0, -1 + 0.5f);
-			else if (newPos.get(0) > scene.boardTilesRatio - 1) newPos.set(0, (scene.boardTilesRatio - 1) + 0.5f);
-			else if (newPos.get(1) < 0) newPos.set(1, -1 + 0.5f);
-			else if (newPos.get(1) > scene.boardTilesRatio - 1) newPos.set(1, (scene.boardTilesRatio - 1) + 0.5f);
-		}
-		scene.crossList.add(newPos);
-	}
-
-	// Fonction permettant de changer de joueur (de permuter)
-	public void changeSnake() {
-		if (currentSnake == snake1) currentSnake = snake2;
-		else currentSnake = snake1;
-		scene.isLeftPlaying = !scene.isLeftPlaying;
-	}
-
-	// Fonction qui renvoie le snake ennemi
-	public Snake getOtherSnake() {
-		if (currentSnake == snake1) return snake2;
-		else return snake1;
-	}
 
 	// Fonction exécuté lorsque l'application se ferme, pas besoin de l'appeler
 	@Override

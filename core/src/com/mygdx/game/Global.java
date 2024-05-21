@@ -20,13 +20,10 @@ public class Global {
     public static final String JVJ = "JVJ";
     public static final String JVIA = "JVIA";
     public static final String IAVIA = "IAVIA";
-    public static final String JVJONLINE = "JVJONLINE";
     public static final String J1 = "J1";
     public static final String J2 = "J2";
     public static final String IAG20 = "IAG20";
     public static final String IA = "IA";
-    public static final String J1TOI = "J1 (Toi)";
-    public static final String J2TOI = "J2 (Toi)";
     public static final String BLUE = "blue";
     public static final String RED = "red";
     public static final String HAUT = "HAUT";
@@ -39,9 +36,9 @@ public class Global {
     public static final String STRAWBERRY = "STRAWBERRY";
     public static final String NOTHING = "NOTHING";
 
-    // État du Thread
+    // Networking
+    public static final String INVALID = "INVALID";
     public static final String STOPTHREAD = "STOPTHREAD";
-    public static final String BLOCKED = "BLOCKED";
 
     // Fonction qui retourne un "tuple" de int (pour la position par rapport aux cases)
     public static ArrayList<Integer> tuple(int x, int y) {

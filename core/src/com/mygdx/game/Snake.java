@@ -63,11 +63,14 @@ public class Snake {
 
     // Fonction de départ pour créer le snake, on le met manuellement en haut à gauche ou en bas à droite
     public void initSnake() {
-        if (side.equals(Global.LEFT)) {
-            addPart(0, scene.boardTilesRatio - 1, true);
-        } else {
-            addPart(scene.boardTilesRatio - 1, 0, true);
-        }
+        if (side.equals(Global.LEFT)) addPart(0, scene.lines - 1, true);
+        else addPart(scene.columns - 1, 0, true);
+    }
+
+    // Setup du snake pour le tournois avec les coordonnées suivantes : Snake joueur 1 en case (2,2), snake joueur 2 en case (9,19)
+    public void initSnakeTournament() {
+        if (side.equals(Global.LEFT)) addPart(2, 2, true);
+        else addPart(19, 9, true);
     }
 
     // Fonction permettant au snake de bouger dans une direction
@@ -95,28 +98,6 @@ public class Snake {
         }
     }
 
-    // Fonction permettant de savoir, avant que le joueur fasse son coup, si il est dans une situation dans lequel son snake est bloqué
-    public boolean isBlocked(boolean grow) {
-        ArrayList<ArrayList<Integer>> tupleList = new ArrayList<>(Arrays.asList(futureHead(Global.GAUCHE), futureHead(Global.DROITE), futureHead(Global.HAUT), futureHead(Global.BAS)));
-        String futureResult;
-        for (ArrayList<Integer> pos: tupleList) {
-            futureResult = previewGameOver(pos, grow);
-            if (futureResult.equals(Global.NOTHING) || futureResult.equals(Global.STRAWBERRY)) return false;
-        }
-        return true;
-    }
-
-    // Fonction permettant de vérifier si le snake va heurter quelque chose avec son futur coup
-    public String previewGameOver(ArrayList<Integer> futureHead, boolean grow) {
-        if (board.usedPositions.contains(futureHead)) {
-            if (snake.size() != 2 && futureHead.equals(snake.get(snake.size() - 1)) && !grow) return Global.NOTHING;
-            else if (objects.strawberries.contains(futureHead)) return Global.STRAWBERRY;
-            else return Global.TOUCHED;
-        } else if (board.outsideLimits.contains(futureHead)) {
-            return Global.TOUCHED;
-        } else return Global.NOTHING;
-    }
-
     // Permet de renvoyer les coordonnées du futur emplacement du snake après son coup
     public ArrayList<Integer> futureHead(String givenDirection) {
         ArrayList<Integer> currentHead = snake.get(0);
@@ -132,20 +113,32 @@ public class Snake {
         }
     }
 
+    // Fonction permettant de vérifier si le snake va heurter quelque chose avec son futur coup
+    public String previewGameOver(ArrayList<Integer> futureHead, boolean grow) {
+        if (board.usedPositions.contains(futureHead)) {
+            if (snake.size() != 2 && futureHead.equals(snake.get(snake.size() - 1)) && !grow) return Global.NOTHING;
+            else if (objects.strawberries.contains(futureHead)) return Global.STRAWBERRY;
+            else return Global.TOUCHED;
+        } else if (board.outsideLimits.contains(futureHead)) {
+            return Global.TOUCHED;
+        } else return Global.NOTHING;
+    }
+
+    // Fonction permettant de savoir, avant que le joueur fasse son coup, si il est dans une situation dans lequel son snake est bloqué
+    public boolean isBlocked(boolean grow) {
+        ArrayList<ArrayList<Integer>> tupleList = new ArrayList<>(Arrays.asList(futureHead(Global.GAUCHE), futureHead(Global.DROITE), futureHead(Global.HAUT), futureHead(Global.BAS)));
+        String futureResult;
+        for (ArrayList<Integer> pos: tupleList) {
+            futureResult = previewGameOver(pos, grow);
+            if (futureResult.equals(Global.NOTHING) || futureResult.equals(Global.STRAWBERRY)) return false;
+        }
+        return true;
+    }
+
     // Permet de changer la direction que va prendre le snake pour son prochain coup
     public void setDirection(String newDirection) {
         lastDirection = direction;
         direction = newDirection;
-    }
-
-    // Permet de changer la liste du snake
-    public void setNewSnake(ArrayList<ArrayList<Integer>> snakeList) {
-        while (!snake.isEmpty()) {
-            removeLast();
-        }
-        for (ArrayList<Integer> pos: snakeList) {
-            addPart(pos.get(0), pos.get(1), false);
-        }
     }
 
     // Permet d'ajouter 1 case de longueur au snake (mis au tout début de la liste (tête) si addStart = true)
@@ -181,15 +174,6 @@ public class Snake {
         if (index == 0) return getHead();
         if (index == snakeRectangles.size - 1) return getTail();
         else return getMiddlePart(index);
-    }
-
-    // Règle la direction en fonction de l'ancienne tête
-    public void setCorrectDirection(ArrayList<Integer> lastHeadPos) {
-        ArrayList<Integer> currentHead = snake.get(0);
-        if (currentHead.get(0) > lastHeadPos.get(0)) setDirection(Global.DROITE);
-        else if (currentHead.get(0) < lastHeadPos.get(0)) setDirection(Global.GAUCHE);
-        else if (currentHead.get(1) > lastHeadPos.get(1)) setDirection(Global.HAUT);
-        else setDirection(Global.BAS);
     }
 
     // Renvoie la bonne Texture pour la tête (selon la direction)

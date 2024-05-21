@@ -29,8 +29,8 @@ public class Board {
                 Global.tuple(scene.boardTilesRatio - 2, 0), Global.tuple(scene.boardTilesRatio - 1, 1)));
 
         // Tableau des positions possibles
-        for (int x = 0; x < scene.boardTilesRatio; x++) {
-            for (int y = 0; y < scene.boardTilesRatio; y++) {
+        for (int x = 0; x < scene.lines; x++) {
+            for (int y = 0; y < scene.columns; y++) {
                 possiblePositions.add(Global.tuple(x, y));
                 unusedPositions.add(Global.tuple(x, y));
                 if (!illegalPos.contains(Global.tuple(x, y))) unusedPositionsWIP.add(Global.tuple(x, y));
@@ -38,13 +38,13 @@ public class Board {
         }
 
         // Limites du plateau
-        for (int i = 0; i < scene.boardTilesRatio; i++) {
-            outsideLimits.add(Global.tuple(-1, i)); // Haut
-            outsideLimits.add(Global.tuple(scene.boardTilesRatio, i)); // Bas
+        for (int i = 0; i < scene.lines; i++) {
+            outsideLimits.add(Global.tuple(-1, i)); // Gauche
+            outsideLimits.add(Global.tuple(scene.columns, i)); // Droite
         }
-        for (int i = 0; i < scene.boardTilesRatio; i++) {
-            outsideLimits.add(Global.tuple(i, -1)); // Gauche
-            outsideLimits.add(Global.tuple(i, scene.boardTilesRatio)); // Droit
+        for (int i = 0; i < scene.columns; i++) {
+            outsideLimits.add(Global.tuple(i, -1)); // Bas
+            outsideLimits.add(Global.tuple(i, scene.lines)); // Haut
         }
     }
 

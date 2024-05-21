@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 /*
@@ -89,6 +90,21 @@ public class Objects {
                         scene.pixelsForTile, scene.pixelsForTile));
             } catch (IllegalArgumentException ignored) {}
         }
+    }
+
+    // Setup des rocks pour le tournois avec les coordonnées suivantes : (4, 4), (5, 4), (6, 4), (7, 4), (4, 17), (5, 17), (6, 17), (7, 17)
+    public void addRocksTournament() {
+        objectsEnabled = true;
+        ArrayList<ArrayList<Integer>> listOfRocks = new ArrayList<>(Arrays.asList(Global.tuple(4, 4), Global.tuple(4, 5),
+                Global.tuple(4, 6), Global.tuple(4, 7), Global.tuple(17, 4), Global.tuple(17, 5),
+                Global.tuple(17, 6), Global.tuple(17, 7)));
+        for (ArrayList<Integer> rock: listOfRocks) {
+            rocks.add(rock);
+            board.addElement(rock);
+            rocksRectangles.add(new Rectangle(scene.pixelsForTile * rock.get(0), scene.pixelsForTile * rock.get(1),
+                    scene.pixelsForTile, scene.pixelsForTile));
+        }
+        objectsEnabled = false;
     }
 
     // Fonction qui met à jour les tableaux pour supprimer les fraises (mangées)
