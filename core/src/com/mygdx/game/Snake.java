@@ -25,7 +25,6 @@ public class Snake {
     ArrayMap<String, ArrayMap<String, Texture>> snakeAssets = new ArrayMap<>();
     ArrayList<ArrayList<Integer>> snake = new ArrayList<>();
     Array<Rectangle> snakeRectangles = new Array<>();
-    ArrayList<ArrayList<Integer>> gameOverSnake = new ArrayList<>();
 
     String side; // "LEFT" ou "RIGHT"
     String direction;
@@ -88,10 +87,6 @@ public class Snake {
             if (!grow) removeLast();
             return true;
         } else {
-            gameOverSnake = new ArrayList<>(snake); // Pour les communications
-            gameOverSnake.add(0, futureHead);
-            if (!grow) gameOverSnake.remove(gameOverSnake.size() - 1);
-
             gameOverDirection = direction;
             direction = lastDirection;
             return false;

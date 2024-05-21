@@ -54,11 +54,6 @@ public class SnakeBlockade extends ApplicationAdapter {
 
 		manageInput();
 
-		System.out.println();
-		System.out.println(scene.gameOn);
-		System.out.println(gameOver);
-		System.out.println();
-
 		if (scene.gameOn || gameOver) {
 
 			netUpdateOtherSnake(); // Si myTurn = false et receivedSomething = true
@@ -129,9 +124,7 @@ public class SnakeBlockade extends ApplicationAdapter {
 			if (Gdx.input.isKeyJustPressed(Input.Keys.D) || Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) actionsMove(Global.DROITE);
 			if (Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) actionsMove(Global.BAS);
 			if (Gdx.input.isKeyJustPressed(Input.Keys.A) || Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) actionsMove(Global.GAUCHE);
-		}
-
-		if (currentSnake instanceof IAG20 && (!net.netActivated || net.myTurn)) {
+		} else if (currentSnake instanceof IAG20 && (!net.netActivated || net.myTurn)) {
 			actionsMove(Global.HAUT);
 		}
 
@@ -294,11 +287,13 @@ public class SnakeBlockade extends ApplicationAdapter {
 			snake2 = new Snake(batch, assets, scene, board, objects, Global.RIGHT);
 			snake1.name = Global.IAG20;
 			snake2.name = Global.IA;
+			((IAG20) snake1).otherSnake = snake2;
 		} else {
 			snake1 = new Snake(batch, assets, scene, board, objects, Global.LEFT);
 			snake2 = new IAG20(batch, assets, scene, board, objects, Global.RIGHT);
 			snake1.name = Global.IA;
 			snake2.name = Global.IAG20;
+			((IAG20) snake2).otherSnake = snake1;
 		}
 		scene.setPlayersNames(snake1.name, snake2.name);
 		snake1.initSnakeTournament();
