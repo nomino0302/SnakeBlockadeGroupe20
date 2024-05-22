@@ -3,6 +3,7 @@ package com.mygdx.game;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class SnakeBlockade extends ApplicationAdapter {
 	Board board;
 	Objects objects;
 	Snake currentSnake, snake1, snake2;
+	Music music;
 
 	int coups = 0;
 	int lapWithoutStrawberry = 0;
@@ -37,6 +39,11 @@ public class SnakeBlockade extends ApplicationAdapter {
 		assets = new Assets();
 		scene = new Scene(batch, assets);
 		net = new NetworkingUPEC();
+
+		// On lance la musique et on la loop
+		music = assets.get("music/music.mp3", Music.class);
+		music.setLooping(true);
+		music.play();
 	}
 
 	// Fonction boucle de jeu, elle agit comme une boucle infinie, pas besoin de l'appeler
@@ -148,6 +155,8 @@ public class SnakeBlockade extends ApplicationAdapter {
 
 			if (scene.sound.contains(x, y)) {
 				scene.isSoundOn = !scene.isSoundOn;
+				if (scene.isSoundOn) music.play();
+				else music.pause();
 			}
 		}
 	}

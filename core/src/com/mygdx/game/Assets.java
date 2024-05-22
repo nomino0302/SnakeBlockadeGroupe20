@@ -1,5 +1,6 @@
 package com.mygdx.game;
 
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.assets.AssetManager;
 
@@ -32,6 +33,9 @@ public class Assets extends AssetManager {
                 this.load("snake/" + color + "_" + part + ".png", Texture.class);
             }
         }
+
+        // Musique
+        this.load("music/music.mp3", Music.class);
 
         // On load toutes les textures avant de lancer le jeu
         this.finishLoading();
