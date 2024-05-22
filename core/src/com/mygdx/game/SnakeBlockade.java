@@ -124,7 +124,7 @@ public class SnakeBlockade extends ApplicationAdapter {
 			if (Gdx.input.isKeyJustPressed(Input.Keys.D) || Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) actionsMove(Global.DROITE);
 			if (Gdx.input.isKeyJustPressed(Input.Keys.S) || Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) actionsMove(Global.BAS);
 			if (Gdx.input.isKeyJustPressed(Input.Keys.A) || Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) actionsMove(Global.GAUCHE);
-		} else if (currentSnake instanceof IAG20 && (!net.netActivated || net.myTurn)) {
+		} else if (scene.gameOn && currentSnake instanceof IAG20 && (!net.netActivated || net.myTurn)) {
 			actionsMove(Global.HAUT);
 		}
 
