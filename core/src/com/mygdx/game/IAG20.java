@@ -24,7 +24,7 @@ public class IAG20 extends Snake {
         if (possibleDirections.isEmpty()) {
             // Si toutes les directions mènent à une collision, choisir une direction aléatoire pour se suicider
             possibleDirections = getAllDirections();
-        }
+        } 
         String bestDirection = chooseBestDirection(possibleDirections);
         this.setDirection(bestDirection); 
     }
@@ -56,10 +56,10 @@ public class IAG20 extends Snake {
     }
     // Vérifie si une position est libre (pas de collision avec les murs ou les serpents)
     boolean isPositionFree(ArrayList<Integer> position) {
-        String result = previewGameOver(position, false); 
+        String result = previewGameOver(position, false);
         boolean collideSelf = this.snake.stream().anyMatch(part -> part.equals(position));
         boolean collideOtherSnake = otherSnake != null && otherSnake.snake.stream().anyMatch(part -> part.equals(position));
-            return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
+        return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
     }
 
 
@@ -90,8 +90,7 @@ public class IAG20 extends Snake {
                 // Parcourt toutes les meilleures directions
                 for (String direction : bestDirections) {
                     ArrayList<Integer> futureHead = futureHead(direction); 
-                    int distance = calculateManhattanDistance(futureHead, otherSnake.snake.get(0)); 
-    
+                    int distance = calculateManhattanDistance(futureHead, otherSnake.snake.get(0));
                     // Si la distance est inférieure à la distance minimale, met à jour la distance minimale et la liste des meilleures directions
                     if (distance < minDistance) {
                         minDistance = distance;
@@ -101,8 +100,6 @@ public class IAG20 extends Snake {
                         bestDirectionsWithMinDistance.add(direction); 
                     }
                 }
-    
-                // Retourne une direction aléatoire parmi les meilleures directions avec la distance minimale
                 return bestDirectionsWithMinDistance.get(random.nextInt(bestDirectionsWithMinDistance.size()));
             } else {
                 return bestDirections.get(0);
@@ -114,7 +111,7 @@ public class IAG20 extends Snake {
         return Math.abs(position1.get(0) - position2.get(0)) + Math.abs(position1.get(1) - position2.get(1));
     }
     
-    // Compte l'espace libre autour d'une position donnée en utilisant BFS
+    // Compte l'espace libre autour d'une position donnée en utilisant BFS (verifie toute les positions autour de la tete du snake si elles sont libre)
     int countFreeSpaces(ArrayList<Integer> start) {
         Set<ArrayList<Integer>> visited = new HashSet<>(); 
         ArrayList<ArrayList<Integer>> queue = new ArrayList<>();
