@@ -62,6 +62,7 @@ public class IAG20 extends Snake {
             return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
     }
 
+
     // Choisit la meilleure direction pour entourer l'autre serpent et éviter les collisions
     String chooseBestDirection(ArrayList<String> possibleDirections) {
         ArrayList<String> bestDirections = new ArrayList<>(); 
