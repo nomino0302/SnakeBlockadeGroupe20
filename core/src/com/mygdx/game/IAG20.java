@@ -1,5 +1,4 @@
 package com.mygdx.game;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -20,14 +19,12 @@ public class IAG20 extends Snake {
 
     void evaluate() {
         // Algo pour l'IA
-        ArrayList<String> possibleDirections = getPossibleDirections(); // Récupère les directions possibles
+        ArrayList<String> possibleDirections = getPossibleDirections(); 
 
         if (possibleDirections.isEmpty()) {
             // Si toutes les directions mènent à une collision, choisir une direction aléatoire pour se suicider
-            possibleDirections = getAllDirections(); // Si aucune direction n'est sûre, toutes sont considérées possibles
+            possibleDirections = getAllDirections();
         }
-
-        // Choisir la meilleure direction possible en fonction de l'espace disponible et de la position de l'autre serpent
         String bestDirection = chooseBestDirection(possibleDirections);
         this.setDirection(bestDirection); 
     }
@@ -35,7 +32,7 @@ public class IAG20 extends Snake {
     // Renvoie les directions possibles qui ne mènent pas à une collision.
     ArrayList<String> getPossibleDirections() {
         ArrayList<String> directions = getAllDirections(); 
-        directions.removeIf(direction -> !isValidDirection(direction)); // Enlève les directions non valides
+        directions.removeIf(direction -> !isValidDirection(direction)); // -> = lambda
         return directions; 
     }
 
@@ -53,34 +50,34 @@ public class IAG20 extends Snake {
     boolean isValidDirection(String direction) {
         ArrayList<Integer> futureHead = futureHead(direction); 
         String result = previewGameOver(futureHead, false); 
-        
-        // Vérifie la collision avec le corps du serpent actuel
         boolean collideSelf = this.snake.stream().skip(1).anyMatch(part -> part.equals(futureHead));
-        
-        // Vérifie la collision avec le corps de l'autre serpent
         boolean collideOtherSnake = otherSnake != null && otherSnake.snake.stream().anyMatch(part -> part.equals(futureHead));
-
-        // Retourne vrai si la position ne mène à aucune collision
         return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
     }
+    // Vérifie si une position est libre (pas de collision avec les murs ou les serpents)
+    boolean isPositionFree(ArrayList<Integer> position) {
+        String result = previewGameOver(position, false); 
+        boolean collideSelf = this.snake.stream().anyMatch(part -> part.equals(position));
+        boolean collideOtherSnake = otherSnake != null && otherSnake.snake.stream().anyMatch(part -> part.equals(position));
+            return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
+    }
 
-        // Choisit la meilleure direction pour entourer l'autre serpent et éviter les collisions
+    // Choisit la meilleure direction pour entourer l'autre serpent et éviter les collisions
     String chooseBestDirection(ArrayList<String> possibleDirections) {
-        ArrayList<String> bestDirections = new ArrayList<>(); // Liste pour stocker les meilleures directions
-        int maxFreeSpace = -1; // Variable pour stocker l'espace libre maximum
-
+        ArrayList<String> bestDirections = new ArrayList<>(); 
+        int maxFreeSpace = -1; 
         // Parcourt toutes les directions possibles
         for (String direction : possibleDirections) {
-            ArrayList<Integer> futureHead = futureHead(direction); // Calcule la future position de la tête
-            int freeSpace = countFreeSpaces(futureHead); // Calcule l'espace libre pour cette direction
+            ArrayList<Integer> futureHead = futureHead(direction);
+            int freeSpace = countFreeSpaces(futureHead); 
 
             // Choisit la direction offrant le plus d'espace libre
                 if (freeSpace > maxFreeSpace) {
-                    maxFreeSpace = freeSpace; // Met à jour l'espace libre maximum
-                    bestDirections.clear(); // Vide la liste des meilleures directions
-                    bestDirections.add(direction); // Ajoute la nouvelle meilleure direction
+                    maxFreeSpace = freeSpace; 
+                    bestDirections.clear(); 
+                    bestDirections.add(direction); 
                 } else if (freeSpace == maxFreeSpace) {
-                    bestDirections.add(direction); // Ajoute la direction en cas d'égalité
+                    bestDirections.add(direction); 
                 }
             }
     
@@ -91,8 +88,8 @@ public class IAG20 extends Snake {
     
                 // Parcourt toutes les meilleures directions
                 for (String direction : bestDirections) {
-                    ArrayList<Integer> futureHead = futureHead(direction); // Calcule la future position de la tête
-                    int distance = calculateManhattanDistance(futureHead, otherSnake.snake.get(0)); // Calcule la distance de Manhattan à la tête de l'autre serpent
+                    ArrayList<Integer> futureHead = futureHead(direction); 
+                    int distance = calculateManhattanDistance(futureHead, otherSnake.snake.get(0)); 
     
                     // Si la distance est inférieure à la distance minimale, met à jour la distance minimale et la liste des meilleures directions
                     if (distance < minDistance) {
@@ -100,61 +97,45 @@ public class IAG20 extends Snake {
                         bestDirectionsWithMinDistance.clear();
                         bestDirectionsWithMinDistance.add(direction);
                     } else if (distance == minDistance) {
-                        bestDirectionsWithMinDistance.add(direction); // Ajoute la direction en cas d'égalité de distance
+                        bestDirectionsWithMinDistance.add(direction); 
                     }
                 }
     
                 // Retourne une direction aléatoire parmi les meilleures directions avec la distance minimale
                 return bestDirectionsWithMinDistance.get(random.nextInt(bestDirectionsWithMinDistance.size()));
             } else {
-                // Retourne la seule direction disponible s'il n'y en a qu'une
                 return bestDirections.get(0);
-            }
         }
+    }
     
-        // Calcule la distance de Manhattan entre deux positions
-        int calculateManhattanDistance(ArrayList<Integer> position1, ArrayList<Integer> position2) {
-            return Math.abs(position1.get(0) - position2.get(0)) + Math.abs(position1.get(1) - position2.get(1));
-        }
+    // Calcule la distance de Manhattan entre deux positions
+    int calculateManhattanDistance(ArrayList<Integer> position1, ArrayList<Integer> position2) {
+        return Math.abs(position1.get(0) - position2.get(0)) + Math.abs(position1.get(1) - position2.get(1));
+    }
     
-
     // Compte l'espace libre autour d'une position donnée en utilisant BFS
     int countFreeSpaces(ArrayList<Integer> start) {
-        Set<ArrayList<Integer>> visited = new HashSet<>(); // Ensemble pour stocker les positions visitées
-        ArrayList<ArrayList<Integer>> queue = new ArrayList<>(); // Liste pour le parcours BFS
-        queue.add(start); // Ajoute la position de départ à la liste
-        visited.add(start); // Marque la position de départ comme visitée
+        Set<ArrayList<Integer>> visited = new HashSet<>(); 
+        ArrayList<ArrayList<Integer>> queue = new ArrayList<>();
+        queue.add(start); 
+        visited.add(start); 
 
         int freeSpaces = 0; 
-
         while (!queue.isEmpty()) {
-            ArrayList<Integer> position = queue.remove(0); // Récupère la prochaine position à explorer
+            ArrayList<Integer> position = queue.remove(0);
             freeSpaces++; 
-
             // Parcourt toutes les directions possibles
             for (String direction : getAllDirections()) {
-                ArrayList<Integer> nextPos = futureHeadFromPosition(position, direction); // Calcule la prochaine position
+                ArrayList<Integer> nextPos = futureHeadFromPosition(position, direction); 
                 if (isPositionFree(nextPos) && !visited.contains(nextPos)) {
                     queue.add(nextPos);
                     visited.add(nextPos);
                 }
             }
         }
-
         return freeSpaces;
     }
 
-    // Vérifie si une position est libre (pas de collision avec les murs ou les serpents)
-    boolean isPositionFree(ArrayList<Integer> position) {
-        String result = previewGameOver(position, false); // Vérifie l'état du jeu pour cette position
-
-        // Vérifie la collision avec le corps du serpent actuel
-        boolean collideSelf = this.snake.stream().anyMatch(part -> part.equals(position));
-        // Vérifie la collision avec le corps de l'autre serpent
-        boolean collideOtherSnake = otherSnake != null && otherSnake.snake.stream().anyMatch(part -> part.equals(position));
-
-        return result.equals(Global.NOTHING) && !collideSelf && !collideOtherSnake;
-    }
 
     // Calcule la future position de la tête du serpent en fonction de la direction
     ArrayList<Integer> futureHeadFromPosition(ArrayList<Integer> position, String direction) {
