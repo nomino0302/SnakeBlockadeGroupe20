@@ -1,6 +1,9 @@
 # SnakeBlockade Groupe 20
 #### Par Arnaud M. et Luc L.
 #### 🔗 GitHub : https://github.com/nomino0302/SnakeBlockadeGroupe20
+⚠️ Le projet, utilisant libGDX et Gradle, peut mener à la détection
+de fausses erreurs dans Visual Studio Code.
+Il est conseillé d'utiliser IntelliJ IDEA.
 
 ## À propos :
 Pour notre projet de fin de L1 à l'UPEC, nous avons du concevoir
