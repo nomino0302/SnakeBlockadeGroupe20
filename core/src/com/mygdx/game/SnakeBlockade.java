@@ -88,43 +88,22 @@ public class SnakeBlockade extends ApplicationAdapter {
 		scene.drawBoard();
 
 		if (scene.playButtonPressed) initNewGame();
-
-		manageInput();
+		manageInput(); // On récupère la touche ou le click pour cette frame là et on la traite dans cette même fonction
 
 		if (scene.gameOn || gameOver) {
 
+			// Affiche les assets
 			netUpdateOtherSnake(); // Si myTurn = false et receivedSomething = true
-
 			objects.drawObjects();
 			snake1.drawSnake();
 			snake2.drawSnake();
 			scene.drawCross();
 
-			// Si Game over
-			if (justGameOver) { // Si justGameOver = true, alors gameOver = true aussi
-				justGameOver = false;
-				gameOver = true;
-				changeSnake(); // Celui qui a fait le coup perdant est le snake d'avant
-				addCross(currentSnake.futureHead(currentSnake.gameOverDirection));
-				setGameOver();
-			}
+			checkGameOver();
+			checkSnakeBlocked();
 
-			// Si snake bloqué (sans faire de coup)
-			if (currentSnake.isBlocked(haveToGrow.get(currentSnake)) && !gameOver) {
-				gameOver = true;
-				crossIsBlocked();
-				setGameOver();
-			}
-
-			if (lapWithoutStrawberry >= 8) { // Car 2 snakes
-				objects.addStrawberry();
-				lapWithoutStrawberry = 0;
-			}
-			if (lapWithoutGrow >= scene.n) {
-				haveToGrow.replace(snake1, true);
-				haveToGrow.replace(snake2, true);
-				lapWithoutGrow = 0;
-			}
+			updateStrawberrySpawning();
+			updateSnakesGrowth();
 		}
 
 		scene.drawBan();
@@ -268,6 +247,45 @@ public class SnakeBlockade extends ApplicationAdapter {
 			} else {
 				actionsMove(net.direction);
 			}
+		}
+	}
+
+	// Instructions si le game over est annoncé (un snake s'est cogné)
+	public void checkGameOver() {
+		// Si Game over
+		if (justGameOver) { // Si justGameOver = true, alors gameOver = true aussi
+			justGameOver = false;
+			gameOver = true;
+			changeSnake(); // Celui qui a fait le coup perdant est le snake d'avant
+			addCross(currentSnake.futureHead(currentSnake.gameOverDirection));
+			setGameOver();
+		}
+	}
+
+	// Vérifie si le snake est bloqué (plus aucune case dispo autour de lui)
+	public void checkSnakeBlocked() {
+		// Si snake bloqué (sans faire de coup)
+		if (currentSnake.isBlocked(haveToGrow.get(currentSnake)) && !gameOver) {
+			gameOver = true;
+			crossIsBlocked();
+			setGameOver();
+		}
+	}
+
+	// Vérifie les variables qui font spawner les fraises selon les tours
+	public void updateStrawberrySpawning() {
+		if (lapWithoutStrawberry >= 8) { // Car 2 snakes
+			objects.addStrawberry();
+			lapWithoutStrawberry = 0;
+		}
+	}
+
+	// Vérifie les variables qui font grandir le snake selon les tours
+	public void updateSnakesGrowth() {
+		if (lapWithoutGrow >= scene.n) {
+			haveToGrow.replace(snake1, true);
+			haveToGrow.replace(snake2, true);
+			lapWithoutGrow = 0;
 		}
 	}
 
