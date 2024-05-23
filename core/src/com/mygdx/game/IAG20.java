@@ -161,7 +161,7 @@ public class IAG20 extends Snake {
 
     @Override
     public boolean move(boolean grow) {
-        evaluate(); 
+        evaluate();
         return super.move(grow);
     }
 }

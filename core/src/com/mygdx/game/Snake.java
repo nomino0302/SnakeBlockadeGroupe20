@@ -140,10 +140,10 @@ public class Snake {
     public void addPart(int x, int y, boolean addStart) {
         if (addStart) {
             snake.add(0, Global.tuple(x, y));
-            snakeRectangles.insert(0, new Rectangle(x * scene.pixelsForTile, y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
+            snakeRectangles.insert(0, new Rectangle(scene.xOff + x * scene.pixelsForTile, scene.yOff + y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
         } else {
             snake.add(Global.tuple(x, y));
-            snakeRectangles.add(new Rectangle(x * scene.pixelsForTile, y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
+            snakeRectangles.add(new Rectangle(scene.xOff + x * scene.pixelsForTile, scene.yOff + y * scene.pixelsForTile, scene.pixelsForTile, scene.pixelsForTile));
         }
         board.addElement(Global.tuple(x, y));
     }

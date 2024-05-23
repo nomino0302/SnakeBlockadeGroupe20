@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.assets.AssetManager;
 
@@ -18,6 +19,7 @@ public class Assets extends AssetManager {
 
     Assets() {
         // Textures
+        this.load("design/bg.png", Texture.class);
         this.load("design/trophy.png", Texture.class);
         this.load("design/zqsd.png", Texture.class);
         this.load("design/sound.png", Texture.class);
@@ -34,8 +36,11 @@ public class Assets extends AssetManager {
             }
         }
 
-        // Musique
+        // Musique et sons
         this.load("music/music.mp3", Music.class);
+        this.load("music/step.wav", Sound.class);
+        this.load("music/win.wav", Sound.class);
+        this.load("music/loose.wav", Sound.class);
 
         // On load toutes les textures avant de lancer le jeu
         this.finishLoading();

@@ -73,7 +73,7 @@ public class Objects {
                 ArrayList<Integer> coor = board.unusedPositionsWIP.get(random.nextInt(board.unusedPositionsWIP.size()));
                 strawberries.add(coor);
                 board.addElement(coor);
-                strawberriesRectangles.add(new Rectangle(scene.pixelsForTile * coor.get(0), scene.pixelsForTile * coor.get(1),
+                strawberriesRectangles.add(new Rectangle(scene.xOff + scene.pixelsForTile * coor.get(0), scene.yOff + scene.pixelsForTile * coor.get(1),
                         scene.pixelsForTile, scene.pixelsForTile));
             } catch (IllegalArgumentException ignored) {} // Si board.unusedPositionsWIP est vide (nextInt ne prend que des nombres positifs)
         }
@@ -86,7 +86,7 @@ public class Objects {
                 ArrayList<Integer> coor = board.unusedPositionsWIP.get(random.nextInt(board.unusedPositionsWIP.size()));
                 rocks.add(coor);
                 board.addElement(coor);
-                rocksRectangles.add(new Rectangle(scene.pixelsForTile * coor.get(0), scene.pixelsForTile * coor.get(1),
+                rocksRectangles.add(new Rectangle(scene.xOff + scene.pixelsForTile * coor.get(0), scene.yOff + scene.pixelsForTile * coor.get(1),
                         scene.pixelsForTile, scene.pixelsForTile));
             } catch (IllegalArgumentException ignored) {}
         }
@@ -101,7 +101,7 @@ public class Objects {
         for (ArrayList<Integer> rock: listOfRocks) {
             rocks.add(rock);
             board.addElement(rock);
-            rocksRectangles.add(new Rectangle(scene.pixelsForTile * rock.get(0), scene.pixelsForTile * rock.get(1),
+            rocksRectangles.add(new Rectangle(scene.xOff + scene.pixelsForTile * rock.get(0), scene.yOff + scene.pixelsForTile * rock.get(1),
                     scene.pixelsForTile, scene.pixelsForTile));
         }
         objectsEnabled = false;
@@ -113,7 +113,7 @@ public class Objects {
             strawberries.remove(coor);
             board.removeElement(coor);
             for (Rectangle strawberryRect: strawberriesRectangles) {
-                if (coor.get(0) * scene.pixelsForTile == strawberryRect.x && coor.get(1) * scene.pixelsForTile == strawberryRect.y) {
+                if (scene.xOff + coor.get(0) * scene.pixelsForTile == strawberryRect.x && scene.yOff + coor.get(1) * scene.pixelsForTile == strawberryRect.y) {
                     strawberriesRectangles.removeValue(strawberryRect, true);
                 }
             }

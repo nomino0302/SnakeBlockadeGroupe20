@@ -16,7 +16,7 @@ public class Board {
     ArrayList<ArrayList<Integer>> possiblePositions = new ArrayList<>();
     ArrayList<ArrayList<Integer>> usedPositions = new ArrayList<>();
     ArrayList<ArrayList<Integer>> unusedPositions = new ArrayList<>();
-    ArrayList<ArrayList<Integer>> unusedPositionsWIP = new ArrayList<>(); // WIP = Without Illegal Positions
+    ArrayList<ArrayList<Integer>> unusedPositionsWIP = new ArrayList<>(); // WIP = Without Illegal Positions (pour ne pas bloquer le spawn du snake)
     ArrayList<ArrayList<Integer>> outsideLimits = new ArrayList<>();
 
     ArrayList<ArrayList<Integer>> illegalPos;
@@ -24,13 +24,13 @@ public class Board {
     Board(Scene scene) {
         this.scene = scene;
 
-        illegalPos = new ArrayList<>(Arrays.asList(Global.tuple(0, scene.boardTilesRatio - 1), Global.tuple(0, scene.boardTilesRatio - 2),
-                Global.tuple(1, scene.boardTilesRatio - 1), Global.tuple(scene.boardTilesRatio - 1, 0),
-                Global.tuple(scene.boardTilesRatio - 2, 0), Global.tuple(scene.boardTilesRatio - 1, 1)));
+        illegalPos = new ArrayList<>(Arrays.asList(Global.tuple(0, scene.lines - 1), Global.tuple(0, scene.lines - 2),
+                Global.tuple(1, scene.lines - 1), Global.tuple(scene.columns - 1, 0),
+                Global.tuple(scene.columns - 2, 0), Global.tuple(scene.columns - 1, 1)));
 
         // Tableau des positions possibles
-        for (int x = 0; x < scene.lines; x++) {
-            for (int y = 0; y < scene.columns; y++) {
+        for (int x = 0; x < scene.columns; x++) {
+            for (int y = 0; y < scene.lines; y++) {
                 possiblePositions.add(Global.tuple(x, y));
                 unusedPositions.add(Global.tuple(x, y));
                 if (!illegalPos.contains(Global.tuple(x, y))) unusedPositionsWIP.add(Global.tuple(x, y));

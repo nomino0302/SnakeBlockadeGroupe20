@@ -21,7 +21,19 @@ public class DesktopLauncher {
 		config.setWindowedMode(Global.WIDTH, Global.HEIGHT); // Taille de la fenêtre en pixels
 		config.setResizable(false);
 
+		// Arguments passés au script
+		boolean args = false;
+		String writeArg = "";
+		String readArg = "";
+		String playerArg = "";
+		if (arg.length >= 3) {
+			args = true;
+			writeArg = arg[0];
+			readArg = arg[1];
+			playerArg = arg[2];
+		}
+
 		// Lance une instance de notre classe de jeu personnalisé
-		new Lwjgl3Application(new SnakeBlockade(), config);
+		new Lwjgl3Application(new SnakeBlockade(args, writeArg, readArg, playerArg), config);
 	}
 }

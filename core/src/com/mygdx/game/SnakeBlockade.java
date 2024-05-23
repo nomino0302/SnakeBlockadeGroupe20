@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import java.util.ArrayList;
@@ -24,13 +25,26 @@ public class SnakeBlockade extends ApplicationAdapter {
 	Objects objects;
 	Snake currentSnake, snake1, snake2;
 	Music music;
+	Sound step, win, loose;
+
+	boolean args;
+	String writeArg, readArg, playerArg;
 
 	int coups = 0;
 	int lapWithoutStrawberry = 0;
 	int lapWithoutGrow = 1;
+	float soundVolume = 1;
 	HashMap<Snake, Boolean> haveToGrow;
 	boolean gameOver = false;
 	boolean justGameOver = false;
+
+	// Constructeur pour passer les arguments de noms de channel de l'utilisateur
+	SnakeBlockade(boolean args, String writeArg, String readArg, String playerArg) {
+		this.args = args;
+		this.writeArg = writeArg;
+		this.readArg = readArg;
+		this.playerArg = playerArg;
+	}
 
 	// Cette fonction est exécuté lors de la création de l'application, pas besoin de l'appeler
 	@Override // Réécrit la méthode parente (de ApplicationAdapter)
@@ -43,7 +57,23 @@ public class SnakeBlockade extends ApplicationAdapter {
 		// On lance la musique et on la loop
 		music = assets.get("music/music.mp3", Music.class);
 		music.setLooping(true);
+		music.setVolume(0.07f);
 		music.play();
+
+		// Sons
+		step = assets.get("music/step.wav", Sound.class);
+		win = assets.get("music/win.wav", Sound.class);
+		loose = assets.get("music/loose.wav", Sound.class);
+
+		// On lance direct la partie si des arguments ont été donnés
+		if (args) {
+			scene.radioGroup.setChecked("[EN LIGNE] IA VS IA");
+			scene.codeChannelWrite = writeArg;
+			scene.codeChannelRead = readArg;
+			if (Integer.parseInt(playerArg) == 1) scene.playerGroup.setChecked("J1 (2, 2)");
+			else scene.playerGroup.setChecked("J2 (9, 19)");
+			scene.startGameButtonActions();
+		}
 	}
 
 	// Fonction boucle de jeu, elle agit comme une boucle infinie, pas besoin de l'appeler
@@ -55,7 +85,7 @@ public class SnakeBlockade extends ApplicationAdapter {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		batch.begin();
-		scene.drawBoard(scene.lines, scene.columns);
+		scene.drawBoard();
 
 		if (scene.playButtonPressed) initNewGame();
 
@@ -108,13 +138,22 @@ public class SnakeBlockade extends ApplicationAdapter {
 
 		objects = new Objects(batch, assets, scene, board);
         objects.objectsEnabled = scene.selectedMod.equals(Global.JVJ);
-		objects.initObjects(scene.boardTilesRatio / 8, (int) (scene.boardTilesRatio / 1.5));
+		objects.initObjects(((scene.min + scene.max) / 2) / 8, (int) (((scene.min + scene.max) / 2) / 1.5));
 
 		// Paramètrage par rapport au mode choisi
-		if (scene.selectedMod.equals(Global.JVJ)) JVJRules();
-		else if (scene.selectedMod.equals(Global.JVIA)) JVIARules();
-		else if (scene.selectedMod.equals(Global.IAVIA)) IAVIARules();
+        switch (scene.selectedMod) {
+            case Global.JVJ:
+                JVJRules();
+                break;
+            case Global.JVIA:
+                JVIARules();
+                break;
+            case Global.IAVIA:
+                IAVIARules();
+                break;
+        }
 
+		coups = 0;
 		scene.playButtonPressed = false;
 		lapWithoutStrawberry = 0;
 		lapWithoutGrow = 1;
@@ -155,8 +194,13 @@ public class SnakeBlockade extends ApplicationAdapter {
 
 			if (scene.sound.contains(x, y)) {
 				scene.isSoundOn = !scene.isSoundOn;
-				if (scene.isSoundOn) music.play();
-				else music.pause();
+				if (scene.isSoundOn) {
+					music.setVolume(0.07f);
+					soundVolume = 1;
+				} else {
+					music.setVolume(0);
+					soundVolume = 0;
+				}
 			}
 		}
 	}
@@ -166,6 +210,8 @@ public class SnakeBlockade extends ApplicationAdapter {
 		currentSnake.setDirection(direction);
 		justGameOver = !(currentSnake.move(haveToGrow.get(currentSnake))); // Le snake bouge ici
 		gameOver = justGameOver; // justGameOver = true sur 1 frame seulement
+
+		step.play(soundVolume); // Son de mouvement
 
 		coups++;
 		if (coups >= 2) {
@@ -201,9 +247,11 @@ public class SnakeBlockade extends ApplicationAdapter {
 		if (currentSnake == snake1) {
 			scene.playerWon = snake2.side;
 			scene.mainText = snake2.name + " wins!";
+			loose.play(soundVolume); // On fait comme si le joueur "principal" est le J1 (le joueur à gauche qui joue en 1er)
 		} else {
 			scene.playerWon = snake1.side;
 			scene.mainText = snake1.name + " wins!";
+			win.play(soundVolume);
 		}
 		if (net.netActivated) net.stopChannel();
 	}
@@ -251,9 +299,9 @@ public class SnakeBlockade extends ApplicationAdapter {
 		newPos.add((float) pos.get(1));
 		if (board.outsideLimits.contains(pos)) {
 			if (newPos.get(0) < 0) newPos.set(0, -1 + 0.5f);
-			else if (newPos.get(0) > scene.boardTilesRatio - 1) newPos.set(0, (scene.boardTilesRatio - 1) + 0.5f);
+			else if (newPos.get(0) > scene.columns - 1) newPos.set(0, (scene.columns - 1) + 0.5f);
 			else if (newPos.get(1) < 0) newPos.set(1, -1 + 0.5f);
-			else if (newPos.get(1) > scene.boardTilesRatio - 1) newPos.set(1, (scene.boardTilesRatio - 1) + 0.5f);
+			else if (newPos.get(1) > scene.lines - 1) newPos.set(1, (scene.lines - 1) + 0.5f);
 		}
 		scene.crossList.add(newPos);
 	}

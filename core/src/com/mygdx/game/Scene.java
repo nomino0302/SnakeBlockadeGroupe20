@@ -33,21 +33,22 @@ public class Scene {
     FreeTypeFontParameter parameter;
 
     // Polices d'écritures
-    BitmapFont titleFont, writingFont, gameInfosFont, leftPlayerFont, rightPlayerFont;
+    BitmapFont titleFont, writingFont, gameInfosFont, littleGameInfosFont, leftPlayerFont, rightPlayerFont;
     GlyphLayout layout;
 
     // Widgets interactifs
     Stage stage;
     Skin skin;
     ArrayList<Actor> widgets = new ArrayList<>();
-    TextField boardTilesRatioField, nField, codeChannelReadField, codeChannelWriteField;
+    TextField columnsField, linesField, nField, codeChannelReadField, codeChannelWriteField;
     TextButton radioJVJ, radioJVIA, radioIAVIA, radioJ1, radioJ2, playButton;
     ButtonGroup<Button> radioGroup, playerGroup;
 
     // Instances d'objet qui seront utiles pour communiquer avec les autres classes
-    int boardTilesRatio = 16;
     int lines = 16;
     int columns = 16;
+    int min = 16;
+    int max = 16;
     int n = 2;
     String codeChannelRead = "";
     String codeChannelWrite = "";
@@ -65,7 +66,9 @@ public class Scene {
     String selectedMod = null;
     String playerWon = null;
     long lastNanoBlink = TimeUtils.nanoTime(); // long car ça peut être un grand nombre
-    float pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
+    float pixelsForTile = (float) Global.WIDTH / max;
+    float xOff = (pixelsForTile * (max - columns)) / 2; // Pour centrer le plateau
+    float yOff = (pixelsForTile * (max - lines)) / 2;
     ArrayList<ArrayList<Float>> crossList = new ArrayList<>();
 
     // Objets libGDX redondants
@@ -88,6 +91,7 @@ public class Scene {
         this.titleFont = createFont("fonts/joystix_monospace.otf", 30, Color.WHITE);
         this.writingFont = createFont("fonts/arial.ttf", 18, Color.WHITE);
         this.gameInfosFont = createFont("fonts/joystix_monospace.otf", 14, Color.WHITE);
+        this.littleGameInfosFont = createFont("fonts/joystix_monospace.otf", 14, Color.LIGHT_GRAY);
         this.leftPlayerFont = createFont("fonts/joystix_monospace.otf", 20, Color.SKY);
         this.rightPlayerFont = createFont("fonts/joystix_monospace.otf", 20, Color.RED);
         this.layout = new GlyphLayout(); // Pour mesurer la taille du texte
@@ -135,18 +139,21 @@ public class Scene {
 
     /*
     Partie affichage plateau de jeu
-     */
+    */
 
     // Plateau en damier
-    public void drawBoard(int linesMax, int columnsMax) {
+    public void drawBoard() {
+        // On draw le fond du terrain d'abord
+        batch.draw(assets.get("design/bg.png", Texture.class), 0, 0, board.width, board.height);
+
         batch.end();
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         Color columnFirstColor = clearTileGreen;
         Color rowFirstColor;
-        for (int i = 0; i < columnsMax; i++) {
+        for (int i = 0; i < columns; i++) {
             rowFirstColor = columnFirstColor;
-            for (int j = 0; j < linesMax; j++) {
-                drawRect(i * pixelsForTile, j * pixelsForTile, pixelsForTile, pixelsForTile, rowFirstColor, false, false);
+            for (int j = 0; j < lines; j++) {
+                drawRect(xOff + i * pixelsForTile, yOff + j * pixelsForTile, pixelsForTile, pixelsForTile, rowFirstColor, false, false);
                 rowFirstColor = changeTileColor(rowFirstColor);
             }
             columnFirstColor = changeTileColor(columnFirstColor);
@@ -158,7 +165,7 @@ public class Scene {
     // Fonction qui permet de dessiner les croix sur le plateau (la où le snake s'est crashé)
     public void drawCross() {
         for (ArrayList<Float> pos: crossList) {
-            batch.draw(assets.get("design/cross.png", Texture.class), pos.get(0) * pixelsForTile, pos.get(1) * pixelsForTile, pixelsForTile, pixelsForTile);
+            batch.draw(assets.get("design/cross.png", Texture.class), xOff + pos.get(0) * pixelsForTile, yOff + pos.get(1) * pixelsForTile, pixelsForTile, pixelsForTile);
         }
     }
 
@@ -181,9 +188,11 @@ public class Scene {
     // Infos au milieu de la bannière
     public void gameInfos() {
         layout.setText(gameInfosFont, "N = " + n);
-        gameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - layout.height);
-        layout.setText(gameInfosFont, codeChannelRead);
-        gameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - layout.height - 20);
+        gameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - 5);
+        layout.setText(littleGameInfosFont, "R: " + codeChannelRead);
+        littleGameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - layout.height - 10);
+        layout.setText(littleGameInfosFont, "W: " + codeChannelWrite);
+        littleGameInfosFont.draw(batch, layout, (ban.width / 2) - (layout.width / 2), Global.HEIGHT - layout.height * 2 - 15);
         drawRect((ban.width / 2) - 80, board.height + 6, 1, ban.height - 12, Color.WHITE, true, false);
         drawRect((ban.width / 2) + 80, board.height + 6, 1, ban.height - 12, Color.WHITE, true, false);
     }
@@ -295,7 +304,10 @@ public class Scene {
     public void drawFieldsTexts() {
         layout.setText(writingFont, "X*X cases =");
         writingFont.draw(batch, layout, 10, board.height - 370);
-        drawRect(140, board.height - 370 - layout.height - 2, 130, 1, Color.WHITE, true, false);
+        drawRect(140, board.height - 370 - layout.height - 2, 50, 1, Color.WHITE, true, false);
+        layout.setText(writingFont, "x");
+        writingFont.draw(batch, layout, 190 + 15 - (layout.width / 2), board.height - 370);
+        drawRect(220, board.height - 370 - layout.height - 2, 50, 1, Color.WHITE, true, false);
 
         layout.setText(writingFont, "N =");
         writingFont.draw(batch, layout, (board.width / 2) + 10,board.height - 370);
@@ -324,8 +336,10 @@ public class Scene {
         radioIAVIA = createRadioButton(widgets, radioGroup, "[EN LIGNE] IA VS IA", (board.width / 2) + 10, board.height - 300, 250);
 
         // TextField (inputs)
-        boardTilesRatioField = createTextField(widgets, Integer.toString(boardTilesRatio), 140 - 10, board.height - 370 - 20, 150, 30);
-        onlyNumbersFilter(boardTilesRatioField);
+        columnsField = createTextField(widgets, Integer.toString(columns), 140 - 10, board.height - 370 - 20, 70, 30);
+        onlyNumbersFilter(columnsField);
+        linesField = createTextField(widgets, Integer.toString(lines), 220 - 10, board.height - 370 - 20, 70, 30);
+        onlyNumbersFilter(linesField);
         nField = createTextField(widgets, Integer.toString(n), (board.width / 2) + 140 - 10, board.height - 370 - 20, 150, 30);
         onlyNumbersFilter(nField);
         codeChannelReadField = createTextField(widgets, "", 140 - 10, board.height - 410 - 20, 150, 30);
@@ -344,6 +358,51 @@ public class Scene {
     public void setPlayersNames(String leftName, String rightName) {
         leftPlayer = leftName;
         rightPlayer = rightName;
+    }
+
+    // Actions quand le bouton "Jouer" est pressé
+    public void startGameButtonActions() {
+        // On récupère le contenu des inputs
+        if (!columnsField.getText().isEmpty()) {
+            int tempNb = Integer.parseInt(columnsField.getText());
+            if (tempNb >= 2 && tempNb <= 300) setColumns(tempNb);
+        }
+        if (!linesField.getText().isEmpty()) {
+            int tempNb = Integer.parseInt(linesField.getText());
+            if (tempNb >= 2 && tempNb <= 300) setLines(tempNb);
+        }
+        if (!nField.getText().isEmpty()) {
+            int tempNb = Integer.parseInt(nField.getText());
+            if (tempNb >= 1) n = tempNb;
+        }
+        if (!codeChannelReadField.getText().isEmpty()) codeChannelRead = codeChannelReadField.getText();
+        if (!codeChannelWriteField.getText().isEmpty()) codeChannelWrite = codeChannelWriteField.getText();
+
+        // Paramètres spécifiques aux modes
+        disableObjects();
+        if (radioGroup.getChecked() == radioJVJ) {
+            selectedMod = Global.JVJ;
+            enableObjects();
+        } else if (radioGroup.getChecked() == radioJVIA) {
+            selectedMod = Global.JVIA;
+        } else if (radioGroup.getChecked() == radioIAVIA) {
+            selectedMod = Global.IAVIA;
+            isRockOn = true;
+            n = 4;
+            setColumns(22);
+            setLines(12);
+            // J1 ou J2 ? (pour le mode en ligne seulement)
+            onlinePlayFirst = playerGroup.getChecked() == radioJ1;
+        }
+
+        playButtonPressed = true;
+        menuToggle = false;
+        gameOn = true;
+        isLeftPlaying = true;
+        mainText = "Pause";
+        crossList.clear();
+        // On supprime le contenu de Stage pour qu'on ne puisse pas cliquer sur les Widgets quand ils ne sont pas visibles
+        stage.clear();
     }
 
     /*
@@ -443,10 +502,24 @@ public class Scene {
         isRockOn = false;
     }
 
-    // Modifier la taille du plateau de jeu
-    private void setBoardTilesRatio(int val) {
-        boardTilesRatio = val;
-        pixelsForTile = (float) Global.WIDTH / boardTilesRatio;
+    // Modifier la taille du plateau de jeu (colonnes = x)
+    private void setColumns(int val) {
+        columns = val;
+        updateRatios();
+    }
+
+    // Modifier la taille du plateau de jeu (lignes = y)
+    private void setLines(int val) {
+        lines = val;
+        updateRatios();
+    }
+
+    private void updateRatios() {
+        min = Math.min(columns, lines);
+        max = Math.max(columns, lines);
+        pixelsForTile = (float) Global.WIDTH / max;
+        xOff = (pixelsForTile * (max - columns)) / 2;
+        yOff = (pixelsForTile * (max - lines)) / 2;
     }
 
     /*
@@ -474,48 +547,7 @@ public class Scene {
         button.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                // On récupère le contenu des inputs
-                if (!boardTilesRatioField.getText().isEmpty()) {
-                    int tempNb = Integer.parseInt(boardTilesRatioField.getText());
-                    if (tempNb >= 2 && tempNb <= 300) setBoardTilesRatio(tempNb);
-                }
-                if (!nField.getText().isEmpty()) {
-                    int tempNb = Integer.parseInt(nField.getText());
-                    if (tempNb >= 1) n = tempNb;
-                }
-                codeChannelRead = codeChannelReadField.getText();
-                codeChannelWrite = codeChannelWriteField.getText();
-
-                // Lignes et colonnes du plateau
-                lines = boardTilesRatio;
-                columns = boardTilesRatio;
-
-                // Paramètres spécifiques aux modes
-                disableObjects();
-                if (radioGroup.getChecked() == radioJVJ) {
-                    selectedMod = Global.JVJ;
-                    enableObjects();
-                } else if (radioGroup.getChecked() == radioJVIA) {
-                    selectedMod = Global.JVIA;
-                } else if (radioGroup.getChecked() == radioIAVIA) {
-                    selectedMod = Global.IAVIA;
-                    isRockOn = true;
-                    n = 4;
-                    lines = 12;
-                    columns = 22;
-                    setBoardTilesRatio(22);
-                    // J1 ou J2 ? (pour le mode en ligne seulement)
-                    onlinePlayFirst = playerGroup.getChecked() == radioJ1;
-                }
-
-                playButtonPressed = true;
-                menuToggle = false;
-                gameOn = true;
-                isLeftPlaying = true;
-                mainText = "Pause";
-                crossList.clear();
-                // On supprime le contenu de Stage pour qu'on ne puisse pas cliquer sur les Widgets quand ils ne sont pas visibles
-                stage.clear();
+                startGameButtonActions();
             }
         });
     }
@@ -529,6 +561,7 @@ public class Scene {
         titleFont.dispose();
         writingFont.dispose();
         gameInfosFont.dispose();
+        littleGameInfosFont.dispose();
         leftPlayerFont.dispose();
         rightPlayerFont.dispose();
     }
