@@ -1,9 +1,6 @@
 # SnakeBlockade Groupe 20
 #### Par Arnaud M. et Luc L.
 #### 🔗 GitHub : https://github.com/nomino0302/SnakeBlockadeGroupe20
-⚠️ Le projet, utilisant libGDX et Gradle, peut mener à la détection
-de fausses erreurs dans Visual Studio Code.
-Il est conseillé d'utiliser IntelliJ IDEA.
 
 ## À propos :
 Pour notre projet de fin de L1 à l'UPEC, nous avons du concevoir
@@ -57,3 +54,53 @@ macOS :
 java -XstartOnFirstThread -jar desktop/build/libs/SnakeBlockadeG20.jar
 java -XstartOnFirstThread -jar desktop/build/libs/SnakeBlockadeG20.jar arg1 arg2 arg3
 ```
+
+## Structure du projet
+libGDX est conçu pour créer des jeux multiplatformes. Il possède donc une architecture
+de dossiers et de fichiers précis :
+```shell
+core/ # Code source utilisé par toutes les plateformes
+├── build/
+└── src/
+    └── com/mygdx/game/
+        ├── Assets.java            # Charge les assets (images, sons, ...)
+        ├── Board.java             # Représente le plateau
+        ├── Channel.java           # Permet la connexion à Padiflac
+        ├── Global.java            # Constantes et fonctions globales (utilisés par tous les fichiers)
+        ├── IAG20.java             # Snake avec la logique IA du groupe 20
+        ├── NetworkingUPEC.java    # Permet la communication entre 2 joueurs
+        ├── Objects.java           # Représente les objets (fraises et rochers)
+        ├── Scene.java             # Permet de mettre en place l'interface graphique (menu, bannière, plateau, ...)
+        ├── Snake.java             # Représente le snake du joueur (longueur, positions, ...)
+        └── SnakeBlockade.java     # Classe principale du jeu (boucle du jeu qui est exécutée toutes les frames notamment)
+    └── build.gradle
+
+desktop/
+├── build/
+│   ├── classes/
+│   ├── generated/
+│   ├── libs/
+│   │   └── SnakeBlockadeG20.jar # .jar à exécuter si ./gradlew desktop:run pose problème
+│   ├── resources/
+│   └── tmp/
+└── src/
+    └── com/mygdx/game/
+        └── DesktopLauncher.java # Fichier exécuté en premier lors du lancement du programme (fonction "main")
+    └── build.gradle
+
+assets/ # Dossier contenant les assets utilisées par le jeu (.png, .mp3, .wav), quand les .java demandent un fichier, le chemin part de la
+.gitignore
+README.md
+
+# Dossiers/fichiers spécifiques à Gradle
+gradle/
+build.gradle
+gradle.properties
+gradlew
+gradlew.bat
+settings.gradle
+```
+
+⚠️ Le projet, utilisant libGDX et Gradle, peut mener à la détection
+de fausses erreurs dans Visual Studio Code.
+Il est conseillé d'utiliser IntelliJ IDEA.
